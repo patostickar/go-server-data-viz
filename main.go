@@ -17,7 +17,7 @@ import (
 )
 
 type DataPoint struct {
-	Timestamp int64   `json:"timestamp"`
+	Timestamp string  `json:"timestamp"`
 	Value     float64 `json:"value"`
 }
 
@@ -27,23 +27,26 @@ type ChartData struct {
 }
 
 type ConfigRequest struct {
-	NumCharts int `json:"numCharts"`
-	NumPoints int `json:"numPoints"`
+	NumCharts    int `json:"numCharts"`
+	NumPoints    int `json:"numPoints"`
+	PollInterval int
 }
 
 type AppConfig struct {
 	NumCharts    int
 	NumPoints    int
 	PollInterval int
+	LastData     []ChartData
 	mutex        sync.RWMutex
 }
 
 var config = AppConfig{
-	NumCharts: 1,
-	NumPoints: 10,
+	NumCharts:    1,
+	NumPoints:    100,
+	PollInterval: 1000,
 }
 
-func generateData() []ChartData {
+func generateData() ([]ChartData, int64) {
 	config.mutex.RLock()
 	defer config.mutex.RUnlock()
 
@@ -53,13 +56,13 @@ func generateData() []ChartData {
 	for chartIndex := 0; chartIndex < config.NumCharts; chartIndex++ {
 		points := make([]DataPoint, config.NumPoints)
 		frequency := 0.5 + float64(chartIndex)*0.5
-		phase := float64(chartIndex) * math.Pi / 4
+		phase := float64(now)/10.0 + float64(chartIndex)*math.Pi/4
 
 		for i := 0; i < config.NumPoints; i++ {
 			x := float64(i) * 0.1
 			timestamp := now + int64(i)
 			points[i] = DataPoint{
-				Timestamp: timestamp,
+				Timestamp: time.Unix(timestamp, 0).Format("15:04:05"),
 				Value:     math.Sin(2*math.Pi*frequency*x + phase),
 			}
 		}
@@ -70,7 +73,8 @@ func generateData() []ChartData {
 		}
 	}
 
-	return charts
+	config.LastData = charts
+	return charts, now
 }
 
 func configHandler(w http.ResponseWriter, r *http.Request) {
@@ -92,6 +96,7 @@ func configHandler(w http.ResponseWriter, r *http.Request) {
 	config.mutex.Lock()
 	config.NumCharts = newConfig.NumCharts
 	config.NumPoints = newConfig.NumPoints
+	config.PollInterval = newConfig.PollInterval
 	config.mutex.Unlock()
 
 	w.Header().Set("Content-Type", "application/json")
@@ -102,7 +107,8 @@ func configHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func dataHandler(w http.ResponseWriter, _ *http.Request) {
-	data := generateData()
+	config.mutex.RLock()
+	data := config.LastData
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(data)
 }
@@ -110,8 +116,9 @@ func dataHandler(w http.ResponseWriter, _ *http.Request) {
 func getConfigHandler(w http.ResponseWriter, _ *http.Request) {
 	config.mutex.RLock()
 	currentConfig := ConfigRequest{
-		NumCharts: config.NumCharts,
-		NumPoints: config.NumPoints,
+		NumCharts:    config.NumCharts,
+		NumPoints:    config.NumPoints,
+		PollInterval: config.PollInterval,
 	}
 	config.mutex.RUnlock()
 
@@ -123,6 +130,14 @@ func main() {
 	var wait time.Duration
 	flag.DurationVar(&wait, "graceful-timeout", time.Second*15, "the duration for which the server gracefully wait for existing connections to finish - e.g. 15s or 1m")
 	flag.Parse()
+
+	go func() {
+		for {
+			time.Sleep(time.Duration(config.PollInterval) * time.Millisecond)
+			_, now := generateData()
+			fmt.Println("Generated data at", time.Unix(now, 0), "for", config.NumCharts, "charts")
+		}
+	}()
 
 	r := mux.NewRouter()
 
