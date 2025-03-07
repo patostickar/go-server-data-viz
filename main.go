@@ -2,129 +2,16 @@ package main
 
 import (
 	"context"
-	"encoding/json"
 	"flag"
 	"fmt"
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 	"log"
-	"math"
 	"net/http"
 	"os"
 	"os/signal"
-	"sync"
 	"time"
 )
-
-type DataPoint struct {
-	Timestamp string  `json:"timestamp"`
-	Value     float64 `json:"value"`
-}
-
-type ChartData struct {
-	ChartID string      `json:"chartId"`
-	Data    []DataPoint `json:"data"`
-}
-
-type ConfigRequest struct {
-	NumCharts    int `json:"numCharts"`
-	NumPoints    int `json:"numPoints"`
-	PollInterval int
-}
-
-type AppConfig struct {
-	NumCharts    int
-	NumPoints    int
-	PollInterval int
-	LastData     []ChartData
-	mutex        sync.RWMutex
-}
-
-var config = AppConfig{
-	NumCharts:    1,
-	NumPoints:    100,
-	PollInterval: 1000,
-}
-
-func generateData() ([]ChartData, int64) {
-	config.mutex.RLock()
-	defer config.mutex.RUnlock()
-
-	now := time.Now().Unix()
-	charts := make([]ChartData, config.NumCharts)
-
-	for chartIndex := 0; chartIndex < config.NumCharts; chartIndex++ {
-		points := make([]DataPoint, config.NumPoints)
-		frequency := 0.5 + float64(chartIndex)*0.5
-		phase := float64(now)/10.0 + float64(chartIndex)*math.Pi/4
-
-		for i := 0; i < config.NumPoints; i++ {
-			x := float64(i) * 0.1
-			timestamp := now + int64(i)
-			points[i] = DataPoint{
-				Timestamp: time.Unix(timestamp, 0).Format("15:04:05"),
-				Value:     math.Sin(2*math.Pi*frequency*x + phase),
-			}
-		}
-
-		charts[chartIndex] = ChartData{
-			ChartID: fmt.Sprintf("chart%d", chartIndex+1),
-			Data:    points,
-		}
-	}
-
-	config.LastData = charts
-	return charts, now
-}
-
-func configHandler(w http.ResponseWriter, r *http.Request) {
-	var newConfig ConfigRequest
-	if err := json.NewDecoder(r.Body).Decode(&newConfig); err != nil {
-		http.Error(w, "Invalid request body", http.StatusBadRequest)
-		return
-	}
-
-	if newConfig.NumCharts < 1 || newConfig.NumCharts > 100 {
-		http.Error(w, "NumCharts must be between 1 and 100", http.StatusBadRequest)
-		return
-	}
-	if newConfig.NumPoints < 10 || newConfig.NumPoints > 1_000_000 {
-		http.Error(w, "NumPoints must be between 10 and 1.000.000", http.StatusBadRequest)
-		return
-	}
-
-	config.mutex.Lock()
-	config.NumCharts = newConfig.NumCharts
-	config.NumPoints = newConfig.NumPoints
-	config.PollInterval = newConfig.PollInterval
-	config.mutex.Unlock()
-
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]interface{}{
-		"message": "Configuration updated successfully",
-		"config":  newConfig,
-	})
-}
-
-func dataHandler(w http.ResponseWriter, _ *http.Request) {
-	config.mutex.RLock()
-	data := config.LastData
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(data)
-}
-
-func getConfigHandler(w http.ResponseWriter, _ *http.Request) {
-	config.mutex.RLock()
-	currentConfig := ConfigRequest{
-		NumCharts:    config.NumCharts,
-		NumPoints:    config.NumPoints,
-		PollInterval: config.PollInterval,
-	}
-	config.mutex.RUnlock()
-
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(currentConfig)
-}
 
 func main() {
 	var wait time.Duration
@@ -148,7 +35,6 @@ func main() {
 	corsHandler := handlers.CORS(
 		handlers.AllowedOrigins([]string{"*"}), // Allow all origins (change this in production)
 		handlers.AllowedMethods([]string{"GET", "POST", "OPTIONS"}),
-		handlers.AllowedHeaders([]string{"Content-Type", "Authorization"}),
 	)
 
 	srv := &http.Server{
