@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"flag"
 	"github.com/patostickar/go-server-data-viz/app"
 	"github.com/patostickar/go-server-data-viz/rest"
 	"github.com/patostickar/go-server-data-viz/utils"
@@ -15,10 +14,6 @@ import (
 
 func main() {
 	newApp := app.NewApp()
-
-	var wait time.Duration
-	flag.DurationVar(&wait, "graceful-timeout", time.Second*15, "the duration for which the server gracefully wait for existing connections to finish - e.g. 15s or 1m")
-	flag.Parse()
 
 	var wg sync.WaitGroup
 
@@ -39,7 +34,7 @@ func main() {
 	cancel()
 
 	// Create a deadline to wait for
-	timeoutCtx, cancel := context.WithTimeout(context.Background(), wait)
+	timeoutCtx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 	defer cancel()
 
 	// Shutdown HTTP server if it exists
