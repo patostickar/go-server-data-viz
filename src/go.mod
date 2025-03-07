@@ -1,6 +1,6 @@
 module github.com/patostickar/go-server-data-viz
 
-go 1.20
+go 1.22.12
 
 require (
 	github.com/99designs/gqlgen v0.17.66
