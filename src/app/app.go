@@ -6,7 +6,7 @@ import (
 )
 
 type config struct {
-	NumCharts    int
+	NumPlots     int
 	NumPoints    int
 	PollInterval int
 }
@@ -20,7 +20,7 @@ type App struct {
 func New() *App {
 	return &App{
 		Config: config{
-			NumCharts:    1,
+			NumPlots:     1,
 			NumPoints:    100,
 			PollInterval: 1000,
 		},

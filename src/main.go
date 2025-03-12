@@ -13,16 +13,16 @@ import (
 )
 
 func main() {
-	newApp := app.New()
+	a := app.New()
 
 	var wg sync.WaitGroup
 
 	cancelCtx, cancel := context.WithCancel(context.Background())
 	wg.Add(1)
-	go utils.StartDataGenerator(cancelCtx, &wg, newApp)
+	go utils.StartDataGenerator(cancelCtx, &wg, a)
 
 	wg.Add(1)
-	httpServer := rest.StartHTTPServer(&wg, newApp)
+	httpServer := rest.StartHTTPServer(&wg, a)
 
 	//TODO: add another wg with the gql server in awesomeProject folder
 
