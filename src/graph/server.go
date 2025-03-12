@@ -3,27 +3,20 @@ package graph
 import (
 	"context"
 	"errors"
+	"fmt"
 	"github.com/99designs/gqlgen/graphql/handler"
 	"github.com/99designs/gqlgen/graphql/handler/extension"
 	"github.com/99designs/gqlgen/graphql/handler/lru"
 	"github.com/99designs/gqlgen/graphql/handler/transport"
 	"github.com/99designs/gqlgen/graphql/playground"
+	"github.com/patostickar/go-server-data-viz/service"
 	"github.com/vektah/gqlparser/v2/ast"
-	"log"
 	"net/http"
-	"os"
 	"sync"
 )
 
-const defaultPort = "8081" // Use a different port than the HTTP server
-
-func StartGqlServer(wg *sync.WaitGroup, ctx context.Context) {
+func StartGqlServer(wg *sync.WaitGroup, ctx context.Context, s *service.Service) {
 	defer wg.Done()
-
-	port := os.Getenv("GRAPHQL_PORT")
-	if port == "" {
-		port = defaultPort
-	}
 
 	srv := handler.New(NewExecutableSchema(Config{Resolvers: &Resolver{}}))
 
@@ -42,22 +35,22 @@ func StartGqlServer(wg *sync.WaitGroup, ctx context.Context) {
 	http.Handle("/query", srv)
 
 	server := &http.Server{
-		Addr:    ":" + port,
+		Addr:    ":" + s.Config.HttpPort,
 		Handler: nil,
 	}
 
 	go func() {
-		log.Printf("GraphQL Server starting on :%s", port)
+		s.Logger.Infof("GraphQL Server starting on :%s", s.Config.GraphQlPort)
 		if err := server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
-			log.Printf("GraphQL server error: %v", err)
+			panic(fmt.Errorf("GraphQL server error: %v", err))
 		}
 	}()
 
 	go func() {
 		<-ctx.Done()
-		log.Println("Shutting down GraphQL server")
+		s.Logger.Infof("Shutting down GraphQL server")
 		if err := server.Shutdown(context.Background()); err != nil {
-			log.Printf("GraphQL server shutdown error: %v", err)
+			s.Logger.Errorf("GraphQL server shutdown error: %v", err)
 		}
 	}()
 }

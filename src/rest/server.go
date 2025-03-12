@@ -3,30 +3,30 @@ package rest
 import (
 	"context"
 	"errors"
+	"fmt"
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
-	"github.com/patostickar/go-server-data-viz/app"
-	"log"
+	"github.com/patostickar/go-server-data-viz/service"
 	"net/http"
 	"sync"
 	"time"
 )
 
-func StartHTTPServer(wg *sync.WaitGroup, ctx context.Context, a *app.App) {
+func StartHTTPServer(wg *sync.WaitGroup, ctx context.Context, s *service.Service) {
 	defer wg.Done()
 
 	// Setup router and routes
 	r := mux.NewRouter()
 	r.HandleFunc("/config", func(w http.ResponseWriter, r *http.Request) {
-		configHandler(w, r, a)
+		settingsHandler(w, r, s)
 	}).Methods("POST")
 
 	r.HandleFunc("/config", func(w http.ResponseWriter, r *http.Request) {
-		getConfigHandler(w, r, a)
+		getSettingsHandler(w, r, s)
 	}).Methods("GET")
 
 	r.HandleFunc("/data", func(w http.ResponseWriter, r *http.Request) {
-		dataHandler(w, r, a)
+		dataHandler(w, r, s)
 	}).Methods("GET")
 
 	// Configure CORS
@@ -38,7 +38,7 @@ func StartHTTPServer(wg *sync.WaitGroup, ctx context.Context, a *app.App) {
 
 	// Configure the server
 	server := &http.Server{
-		Addr: "0.0.0.0:" + a.Config.Port,
+		Addr: "0.0.0.0:" + s.Config.HttpPort,
 		// Good practice to set timeouts to avoid Slowloris attacks
 		WriteTimeout: time.Second * 15,
 		ReadTimeout:  time.Second * 15,
@@ -46,19 +46,21 @@ func StartHTTPServer(wg *sync.WaitGroup, ctx context.Context, a *app.App) {
 		Handler:      corsHandler(r),
 	}
 
-	// Run server in a goroutine so it doesn't block
+	// Run server in s goroutine so it doesn't block
 	go func() {
-		log.Printf("HTTP Server starting on :8080")
+		s.Logger.Infof("HTTP Server starting on :8080")
 		if err := server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
-			log.Printf("HTTP server error: %v", err)
+			panic(fmt.Errorf("HTTP server error: %v", err))
+
 		}
 	}()
 
 	go func() {
 		<-ctx.Done()
-		log.Println("Shutting down HTTP server")
+		s.Logger.Infof("Shutting down HTTP server")
 		if err := server.Shutdown(context.Background()); err != nil {
-			log.Printf("HTTP server shutdown error: %v", err)
+			s.Logger.Errorf("HTTP server shutdown error: %v", err)
 		}
 	}()
+
 }

@@ -1,19 +1,16 @@
-package utils
+package worker
 
 import (
 	"context"
 	"fmt"
-	"github.com/patostickar/go-server-data-viz/app"
 	"github.com/patostickar/go-server-data-viz/models"
-	"log"
+	"github.com/patostickar/go-server-data-viz/service"
 	"math"
 	"sync"
 	"time"
 )
 
-func generateData(application *app.App, timestamp int64) {
-	application.Mutex.RLock()
-	defer application.Mutex.RUnlock()
+func generateChartsData(numPlots, numPoints int, timestamp int64) []models.ChartData {
 
 	numCharts := 3
 	charts := make([]models.ChartData, numCharts)
@@ -25,15 +22,15 @@ func generateData(application *app.App, timestamp int64) {
 	}
 
 	for chartIndex := 0; chartIndex < numCharts; chartIndex++ {
-		points := make([]models.ChartPoint, application.PlotSettings.NumPoints)
+		points := make([]models.ChartPoint, numPoints)
 
-		for i := 0; i < application.PlotSettings.NumPoints; i++ {
+		for i := 0; i < numPoints; i++ {
 			x := float64(i) * 0.1
 			currentTimestamp := timestamp + int64(i)
 
 			values := make(map[string]float64)
 
-			for plotIndex := 0; plotIndex < application.PlotSettings.NumPlots; plotIndex++ {
+			for plotIndex := 0; plotIndex < numPlots; plotIndex++ {
 				frequency := 0.5 + float64(chartIndex)*0.5 + float64(plotIndex)*0.2
 				phase := float64(timestamp)/10.0 + float64(chartIndex)*math.Pi/4 + float64(plotIndex)*math.Pi/8
 
@@ -52,29 +49,31 @@ func generateData(application *app.App, timestamp int64) {
 			Data:    points,
 		}
 	}
-
-	application.LastData = charts
+	return charts
 }
 
 // StartDataGenerator initializes and starts the data generation routine
-func StartDataGenerator(ctx context.Context, wg *sync.WaitGroup, a *app.App) {
-	defer wg.Done()
-
-	for {
-		select {
-		case <-ctx.Done():
-			log.Println("Data generator stopping due to shutdown signal")
-			return
-		default:
-			time.Sleep(time.Duration(a.PlotSettings.PollInterval) * time.Millisecond)
-			timestamp := time.Now().Unix()
-			generateData(a, timestamp)
-			log.Printf("Generated data at %s for %d plot per chart with %d points",
-				time.Unix(timestamp, 0).Format("15:04:05"),
-				a.PlotSettings.NumPlots,
-				a.PlotSettings.NumPoints)
+func StartDataGenerator(wg *sync.WaitGroup, ctx context.Context, s *service.Service) {
+	settings := s.GetSettings()
+	go func() {
+		defer wg.Done()
+		for {
+			select {
+			case <-ctx.Done():
+				s.Logger.Infof("Data generator stopping due to shutdown signal")
+				return
+			default:
+				time.Sleep(time.Duration(settings.PollInterval) * time.Millisecond)
+				timestamp := time.Now().Unix()
+				charts := generateChartsData(settings.NumPlots, settings.NumPoints, timestamp)
+				s.DataSource.SaveData(charts)
+				s.Logger.Infof("Generated data at %settings for %d plot per chart with %d points",
+					time.Unix(timestamp, 0).Format("15:04:05"),
+					settings.NumPlots,
+					settings.NumPoints)
+			}
 		}
-	}
+	}()
 }
 
 func sineWave(x, frequency, phase float64) float64 {

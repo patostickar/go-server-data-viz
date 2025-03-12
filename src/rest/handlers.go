@@ -2,63 +2,55 @@ package rest
 
 import (
 	"encoding/json"
-	"github.com/patostickar/go-server-data-viz/app"
 	"github.com/patostickar/go-server-data-viz/models"
+	"github.com/patostickar/go-server-data-viz/service"
 	"net/http"
 )
 
-// configHandler updates the application configuration
-func configHandler(w http.ResponseWriter, r *http.Request, a *app.App) {
-	var newConfig models.ConfigRequest
-	if err := json.NewDecoder(r.Body).Decode(&newConfig); err != nil {
+// settingsHandler updates the application configuration
+func settingsHandler(w http.ResponseWriter, r *http.Request, a *service.Service) {
+	var settings models.NewSettingsRequest
+	if err := json.NewDecoder(r.Body).Decode(&settings); err != nil {
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
 		return
 	}
 
 	// Validate configuration parameters
-	if newConfig.NumPlotsPerChart < 1 || newConfig.NumPlotsPerChart > 100 {
+	if settings.NumPlotsPerChart < 1 || settings.NumPlotsPerChart > 100 {
 		http.Error(w, "NumPlots must be between 1 and 100", http.StatusBadRequest)
 		return
 	}
-	if newConfig.NumPoints < 10 || newConfig.NumPoints > 1_000_000 {
+	if settings.NumPoints < 10 || settings.NumPoints > 1_000_000 {
 		http.Error(w, "NumPlots must be between 10 and 1,000,000", http.StatusBadRequest)
 		return
 	}
 
 	// Update configuration
-	a.Mutex.Lock()
-	a.PlotSettings.NumPlots = newConfig.NumPlotsPerChart
-	a.PlotSettings.NumPoints = newConfig.NumPoints
-	a.PlotSettings.PollInterval = newConfig.PollInterval
-	a.Mutex.Unlock()
+	a.SetSettings(service.PlotSettings{
+		NumPlots:     settings.NumPlotsPerChart,
+		NumPoints:    settings.NumPoints,
+		PollInterval: settings.PollInterval,
+	})
 
 	// Send response
 	w.Header().Set("Content-Type", "a/json")
 	json.NewEncoder(w).Encode(map[string]interface{}{
-		"message": "Configuration updated successfully",
-		"config":  newConfig,
+		"message":  "Configuration updated successfully",
+		"settings": settings,
 	})
 }
 
 // dataHandler returns the current chart data
-func dataHandler(w http.ResponseWriter, _ *http.Request, a *app.App) {
-	a.Mutex.RLock()
-	data := a.LastData
-	a.Mutex.RUnlock()
+func dataHandler(w http.ResponseWriter, _ *http.Request, a *service.Service) {
+	data := a.DataSource.GetData()
 
 	w.Header().Set("Content-Type", "a/json")
 	json.NewEncoder(w).Encode(data)
 }
 
-// getConfigHandler returns the current configuration
-func getConfigHandler(w http.ResponseWriter, _ *http.Request, a *app.App) {
-	a.Mutex.RLock()
-	currentConfig := models.ConfigRequest{
-		NumPlotsPerChart: a.PlotSettings.NumPlots,
-		NumPoints:        a.PlotSettings.NumPoints,
-		PollInterval:     a.PlotSettings.PollInterval,
-	}
-	a.Mutex.RUnlock()
+// getSettingsHandler returns the current configuration
+func getSettingsHandler(w http.ResponseWriter, _ *http.Request, a *service.Service) {
+	currentConfig := a.GetSettings()
 
 	w.Header().Set("Content-Type", "a/json")
 	json.NewEncoder(w).Encode(currentConfig)
