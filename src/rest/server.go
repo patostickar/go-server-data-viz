@@ -1,6 +1,7 @@
 package rest
 
 import (
+	"context"
 	"errors"
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
@@ -11,21 +12,21 @@ import (
 	"time"
 )
 
-func StartHTTPServer(wg *sync.WaitGroup, application *app.App) *http.Server {
+func StartHTTPServer(wg *sync.WaitGroup, ctx context.Context, a *app.App) {
 	defer wg.Done()
 
 	// Setup router and routes
 	r := mux.NewRouter()
 	r.HandleFunc("/config", func(w http.ResponseWriter, r *http.Request) {
-		configHandler(w, r, application)
+		configHandler(w, r, a)
 	}).Methods("POST")
 
 	r.HandleFunc("/config", func(w http.ResponseWriter, r *http.Request) {
-		getConfigHandler(w, r, application)
+		getConfigHandler(w, r, a)
 	}).Methods("GET")
 
 	r.HandleFunc("/data", func(w http.ResponseWriter, r *http.Request) {
-		dataHandler(w, r, application)
+		dataHandler(w, r, a)
 	}).Methods("GET")
 
 	// Configure CORS
@@ -36,8 +37,8 @@ func StartHTTPServer(wg *sync.WaitGroup, application *app.App) *http.Server {
 	)
 
 	// Configure the server
-	srv := &http.Server{
-		Addr: "0.0.0.0:8080",
+	server := &http.Server{
+		Addr: "0.0.0.0:" + a.Config.Port,
 		// Good practice to set timeouts to avoid Slowloris attacks
 		WriteTimeout: time.Second * 15,
 		ReadTimeout:  time.Second * 15,
@@ -48,10 +49,16 @@ func StartHTTPServer(wg *sync.WaitGroup, application *app.App) *http.Server {
 	// Run server in a goroutine so it doesn't block
 	go func() {
 		log.Printf("HTTP Server starting on :8080")
-		if err := srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+		if err := server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 			log.Printf("HTTP server error: %v", err)
 		}
 	}()
 
-	return srv
+	go func() {
+		<-ctx.Done()
+		log.Println("Shutting down HTTP server")
+		if err := server.Shutdown(context.Background()); err != nil {
+			log.Printf("HTTP server shutdown error: %v", err)
+		}
+	}()
 }

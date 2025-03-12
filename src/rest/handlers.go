@@ -27,9 +27,9 @@ func configHandler(w http.ResponseWriter, r *http.Request, a *app.App) {
 
 	// Update configuration
 	a.Mutex.Lock()
-	a.Config.NumPlots = newConfig.NumPlotsPerChart
-	a.Config.NumPoints = newConfig.NumPoints
-	a.Config.PollInterval = newConfig.PollInterval
+	a.PlotSettings.NumPlots = newConfig.NumPlotsPerChart
+	a.PlotSettings.NumPoints = newConfig.NumPoints
+	a.PlotSettings.PollInterval = newConfig.PollInterval
 	a.Mutex.Unlock()
 
 	// Send response
@@ -54,9 +54,9 @@ func dataHandler(w http.ResponseWriter, _ *http.Request, a *app.App) {
 func getConfigHandler(w http.ResponseWriter, _ *http.Request, a *app.App) {
 	a.Mutex.RLock()
 	currentConfig := models.ConfigRequest{
-		NumPlotsPerChart: a.Config.NumPlots,
-		NumPoints:        a.Config.NumPoints,
-		PollInterval:     a.Config.PollInterval,
+		NumPlotsPerChart: a.PlotSettings.NumPlots,
+		NumPoints:        a.PlotSettings.NumPoints,
+		PollInterval:     a.PlotSettings.PollInterval,
 	}
 	a.Mutex.RUnlock()
 

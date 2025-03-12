@@ -25,15 +25,15 @@ func generateData(application *app.App, timestamp int64) {
 	}
 
 	for chartIndex := 0; chartIndex < numCharts; chartIndex++ {
-		points := make([]models.ChartPoint, application.Config.NumPoints)
+		points := make([]models.ChartPoint, application.PlotSettings.NumPoints)
 
-		for i := 0; i < application.Config.NumPoints; i++ {
+		for i := 0; i < application.PlotSettings.NumPoints; i++ {
 			x := float64(i) * 0.1
 			currentTimestamp := timestamp + int64(i)
 
 			values := make(map[string]float64)
 
-			for plotIndex := 0; plotIndex < application.Config.NumPlots; plotIndex++ {
+			for plotIndex := 0; plotIndex < application.PlotSettings.NumPlots; plotIndex++ {
 				frequency := 0.5 + float64(chartIndex)*0.5 + float64(plotIndex)*0.2
 				phase := float64(timestamp)/10.0 + float64(chartIndex)*math.Pi/4 + float64(plotIndex)*math.Pi/8
 
@@ -66,13 +66,13 @@ func StartDataGenerator(ctx context.Context, wg *sync.WaitGroup, a *app.App) {
 			log.Println("Data generator stopping due to shutdown signal")
 			return
 		default:
-			time.Sleep(time.Duration(a.Config.PollInterval) * time.Millisecond)
+			time.Sleep(time.Duration(a.PlotSettings.PollInterval) * time.Millisecond)
 			timestamp := time.Now().Unix()
 			generateData(a, timestamp)
 			log.Printf("Generated data at %s for %d plot per chart with %d points",
 				time.Unix(timestamp, 0).Format("15:04:05"),
-				a.Config.NumPlots,
-				a.Config.NumPoints)
+				a.PlotSettings.NumPlots,
+				a.PlotSettings.NumPoints)
 		}
 	}
 }

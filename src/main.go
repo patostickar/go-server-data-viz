@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"github.com/patostickar/go-server-data-viz/app"
+	"github.com/patostickar/go-server-data-viz/graph"
 	"github.com/patostickar/go-server-data-viz/rest"
 	"github.com/patostickar/go-server-data-viz/utils"
 	"log"
@@ -22,9 +23,10 @@ func main() {
 	go utils.StartDataGenerator(cancelCtx, &wg, a)
 
 	wg.Add(1)
-	httpServer := rest.StartHTTPServer(&wg, a)
+	rest.StartHTTPServer(&wg, cancelCtx, a)
 
-	//TODO: add another wg with the gql server in awesomeProject folder
+	wg.Add(1)
+	graph.StartGqlServer(&wg, cancelCtx)
 
 	// Setup graceful shutdown
 	c := make(chan os.Signal, 1)
@@ -38,14 +40,6 @@ func main() {
 	// Create a deadline to wait for
 	timeoutCtx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 	defer cancel()
-
-	// Shutdown HTTP server if it exists
-	if httpServer != nil {
-		log.Println("Shutting down HTTP server")
-		if err := httpServer.Shutdown(timeoutCtx); err != nil {
-			log.Printf("HTTP server shutdown error: %v", err)
-		}
-	}
 
 	// Wait for all goroutines to finish (with a timeout)
 	done := make(chan struct{})
@@ -61,6 +55,6 @@ func main() {
 		log.Println("Shutdown timed out, forcing exit")
 	}
 
-	log.Println("Server exiting")
+	log.Println("Exiting")
 	os.Exit(0)
 }
