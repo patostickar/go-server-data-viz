@@ -13,7 +13,7 @@ import (
 )
 
 func main() {
-	newApp := app.NewApp()
+	newApp := app.New()
 
 	var wg sync.WaitGroup
 
@@ -23,6 +23,8 @@ func main() {
 
 	wg.Add(1)
 	httpServer := rest.StartHTTPServer(&wg, newApp)
+
+	//TODO: add another wg with the gql server in awesomeProject folder
 
 	// Setup graceful shutdown
 	c := make(chan os.Signal, 1)

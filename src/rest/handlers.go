@@ -7,7 +7,7 @@ import (
 	"net/http"
 )
 
-// ConfigHandler updates the application configuration
+// configHandler updates the application configuration
 func configHandler(w http.ResponseWriter, r *http.Request, application *app.App) {
 	var newConfig models.ConfigRequest
 	if err := json.NewDecoder(r.Body).Decode(&newConfig); err != nil {
@@ -40,7 +40,7 @@ func configHandler(w http.ResponseWriter, r *http.Request, application *app.App)
 	})
 }
 
-// DataHandler returns the current chart data
+// dataHandler returns the current chart data
 func dataHandler(w http.ResponseWriter, _ *http.Request, application *app.App) {
 	application.Mutex.RLock()
 	data := application.LastData
@@ -50,7 +50,7 @@ func dataHandler(w http.ResponseWriter, _ *http.Request, application *app.App) {
 	json.NewEncoder(w).Encode(data)
 }
 
-// GetConfigHandler returns the current configuration
+// getConfigHandler returns the current configuration
 func getConfigHandler(w http.ResponseWriter, _ *http.Request, application *app.App) {
 	application.Mutex.RLock()
 	currentConfig := models.ConfigRequest{

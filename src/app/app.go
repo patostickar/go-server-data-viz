@@ -17,7 +17,7 @@ type App struct {
 	Mutex    sync.RWMutex
 }
 
-func NewApp() *App {
+func New() *App {
 	return &App{
 		Config: config{
 			NumCharts:    1,
