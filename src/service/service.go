@@ -2,8 +2,8 @@ package service
 
 import (
 	"fmt"
-	"github.com/patostickar/go-server-data-viz/datasource"
-	"github.com/patostickar/go-server-data-viz/models"
+	"github.com/patostickar/go-server-data-viz/src/datasource"
+	"github.com/patostickar/go-server-data-viz/src/models"
 	log "github.com/sirupsen/logrus"
 	"math"
 	"sync"

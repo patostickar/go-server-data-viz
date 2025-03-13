@@ -1,7 +1,7 @@
 package datasource
 
 import (
-	"github.com/patostickar/go-server-data-viz/models"
+	"github.com/patostickar/go-server-data-viz/src/models"
 	"sync"
 )
 

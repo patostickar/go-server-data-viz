@@ -2,12 +2,13 @@ package main
 
 import (
 	"context"
-	"github.com/patostickar/go-server-data-viz/config"
-	"github.com/patostickar/go-server-data-viz/datasource"
-	"github.com/patostickar/go-server-data-viz/graph"
-	"github.com/patostickar/go-server-data-viz/rest"
-	"github.com/patostickar/go-server-data-viz/service"
-	"github.com/patostickar/go-server-data-viz/worker"
+	"github.com/patostickar/go-server-data-viz/src/config"
+	"github.com/patostickar/go-server-data-viz/src/datasource"
+	"github.com/patostickar/go-server-data-viz/src/graph"
+	"github.com/patostickar/go-server-data-viz/src/rest"
+	"github.com/patostickar/go-server-data-viz/src/service"
+	"github.com/patostickar/go-server-data-viz/src/worker"
+
 	"os"
 	"os/signal"
 	"sync"

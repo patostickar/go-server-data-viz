@@ -10,7 +10,7 @@ import (
 	"fmt"
 	"math/big"
 
-	"github.com/patostickar/go-server-data-viz/graph/model"
+	"github.com/patostickar/go-server-data-viz/src/graph/model"
 )
 
 // CreateTodo is the resolver for the createTodo field.

@@ -2,7 +2,7 @@ package worker
 
 import (
 	"context"
-	"github.com/patostickar/go-server-data-viz/service"
+	"github.com/patostickar/go-server-data-viz/src/service"
 	"sync"
 	"time"
 )

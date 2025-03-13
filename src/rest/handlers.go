@@ -2,8 +2,8 @@ package rest
 
 import (
 	"encoding/json"
-	"github.com/patostickar/go-server-data-viz/models"
-	"github.com/patostickar/go-server-data-viz/service"
+	"github.com/patostickar/go-server-data-viz/src/models"
+	"github.com/patostickar/go-server-data-viz/src/service"
 	"net/http"
 )
 
