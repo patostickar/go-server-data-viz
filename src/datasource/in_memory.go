@@ -6,7 +6,7 @@ import (
 )
 
 type DataSource interface {
-	Read(key string) (string, error)
+	Read(key string) (interface{}, error)
 	Create(key string, value interface{}) error
 	Update(key string, value interface{}) error
 	Upsert(key string, value interface{})
@@ -35,12 +35,12 @@ func (db *InMemoryDB) Create(key string, value interface{}) error {
 }
 
 // Read retrieves the value associated with the given key.
-func (db *InMemoryDB) Read(key string) (string, error) {
+func (db *InMemoryDB) Read(key string) (interface{}, error) {
 	value, ok := db.data.Load(key)
 	if !ok {
 		return "", errors.New("key not found")
 	}
-	return value.(string), nil
+	return value.(interface{}), nil
 }
 
 // Upsert updates the value if the key exists, or inserts the key-value pair if it doesn't.

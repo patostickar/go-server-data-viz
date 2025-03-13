@@ -2,18 +2,20 @@
 
 package model
 
-type Mutation struct {
+type ChartData struct {
+	ChartID string        `json:"chartId"`
+	Data    []*ChartPoint `json:"data"`
 }
 
-type NewTodo struct {
-	Text   string `json:"text"`
-	UserID string `json:"userId"`
+type ChartPoint struct {
+	Timestamp string          `json:"timestamp"`
+	Values    []*KeyValuePair `json:"values"`
+}
+
+type KeyValuePair struct {
+	Key   string  `json:"key"`
+	Value float64 `json:"value"`
 }
 
 type Query struct {
-}
-
-type User struct {
-	ID   string `json:"id"`
-	Name string `json:"name"`
 }

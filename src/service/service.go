@@ -2,6 +2,7 @@ package service
 
 import (
 	"fmt"
+	"github.com/patostickar/go-server-data-viz/src/config"
 	"github.com/patostickar/go-server-data-viz/src/datasource"
 	"github.com/patostickar/go-server-data-viz/src/models"
 	log "github.com/sirupsen/logrus"
@@ -17,7 +18,7 @@ type PlotSettings struct {
 }
 
 type Service struct {
-	Logger       *log.Logger
+	logger       *log.Logger
 	plotSettings PlotSettings
 	Store        datasource.DataSource
 	mu           sync.RWMutex
@@ -25,7 +26,7 @@ type Service struct {
 
 func New(plotSettings PlotSettings, datasource datasource.DataSource) *Service {
 	return &Service{
-		Logger:       log.New(),
+		logger:       log.New(),
 		plotSettings: plotSettings,
 		Store:        datasource,
 		mu:           sync.RWMutex{},
@@ -82,7 +83,7 @@ func (s *Service) GenerateChartsData(numPlots, numPoints int, timestamp int64) {
 			Data:    points,
 		}
 	}
-	s.Store.Create("charts", charts)
+	s.Store.Upsert(config.ChartsKey, charts)
 }
 
 func (s *Service) sineWave(x, frequency, phase float64) float64 {

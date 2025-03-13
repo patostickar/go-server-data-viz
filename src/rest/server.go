@@ -8,6 +8,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/patostickar/go-server-data-viz/src/config"
 	"github.com/patostickar/go-server-data-viz/src/service"
+	"github.com/sirupsen/logrus"
 	"net/http"
 	"sync"
 	"time"
@@ -15,6 +16,9 @@ import (
 
 func StartHTTPServer(wg *sync.WaitGroup, ctx context.Context, cfg config.Config, s *service.Service) {
 	defer wg.Done()
+
+	logger := logrus.New().WithField("service", "http")
+	logger.Level = logrus.DebugLevel
 
 	// Setup router and routes
 	r := mux.NewRouter()
@@ -49,7 +53,7 @@ func StartHTTPServer(wg *sync.WaitGroup, ctx context.Context, cfg config.Config,
 
 	// Run server in s goroutine so it doesn't block
 	go func() {
-		s.Logger.Infof("HTTP Server starting on :%s", cfg.GetHttpPort())
+		logger.Infof("HTTP Server starting on :%s", cfg.GetHttpPort())
 		if err := server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 			panic(fmt.Errorf("HTTP server error: %v", err))
 
@@ -58,9 +62,9 @@ func StartHTTPServer(wg *sync.WaitGroup, ctx context.Context, cfg config.Config,
 
 	go func() {
 		<-ctx.Done()
-		s.Logger.Infof("Shutting down HTTP server")
+		logger.Infof("Shutting down HTTP server")
 		if err := server.Shutdown(context.Background()); err != nil {
-			s.Logger.Errorf("HTTP server shutdown error: %v", err)
+			logger.Errorf("HTTP server shutdown error: %v", err)
 		}
 	}()
 

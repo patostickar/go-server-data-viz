@@ -2,6 +2,7 @@ package rest
 
 import (
 	"encoding/json"
+	"github.com/patostickar/go-server-data-viz/src/config"
 	"github.com/patostickar/go-server-data-viz/src/service"
 	"net/http"
 )
@@ -51,7 +52,7 @@ func settingsHandler(w http.ResponseWriter, r *http.Request, a *service.Service)
 
 // dataHandler returns the current chart data
 func dataHandler(w http.ResponseWriter, _ *http.Request, a *service.Service) {
-	data, err := a.Store.Read("charts")
+	data, err := a.Store.Read(config.ChartsKey)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

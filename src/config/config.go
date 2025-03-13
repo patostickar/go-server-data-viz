@@ -5,6 +5,8 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+const ChartsKey = "CHARTS"
+
 type Config interface {
 	GetHttpPort() string
 	GetGraphQlPort() string

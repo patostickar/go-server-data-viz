@@ -8,6 +8,7 @@ import (
 	"github.com/patostickar/go-server-data-viz/src/rest"
 	"github.com/patostickar/go-server-data-viz/src/service"
 	"github.com/patostickar/go-server-data-viz/src/worker"
+	"github.com/sirupsen/logrus"
 
 	"os"
 	"os/signal"
@@ -16,6 +17,8 @@ import (
 )
 
 func main() {
+	logger := logrus.New().WithField("service", "go-server-data-viz")
+	logger.Level = logrus.DebugLevel
 	cfg := config.New()
 
 	s := service.New(
@@ -41,7 +44,7 @@ func main() {
 
 	// Block until we receive our signal
 	<-c
-	s.Logger.Infof("Shutdown signal received")
+	logger.Infof("Shutdown signal received")
 	cancel()
 
 	// Create s deadline to wait for
@@ -57,11 +60,11 @@ func main() {
 
 	select {
 	case <-done:
-		s.Logger.Infof("All services shut down properly")
+		logger.Infof("All services shut down properly")
 	case <-timeoutCtx.Done():
-		s.Logger.Error("Shutdown timed out, forcing exit")
+		logger.Error("Shutdown timed out, forcing exit")
 	}
 
-	s.Logger.Infof("Exiting")
+	logger.Infof("Exiting")
 	os.Exit(0)
 }

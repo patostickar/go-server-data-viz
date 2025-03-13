@@ -11,6 +11,7 @@ import (
 	"github.com/99designs/gqlgen/graphql/playground"
 	"github.com/patostickar/go-server-data-viz/src/config"
 	"github.com/patostickar/go-server-data-viz/src/service"
+	"github.com/sirupsen/logrus"
 	"github.com/vektah/gqlparser/v2/ast"
 	"net/http"
 	"sync"
@@ -18,8 +19,12 @@ import (
 
 func StartGqlServer(wg *sync.WaitGroup, ctx context.Context, cfg config.Config, s *service.Service) {
 	defer wg.Done()
+	logger := logrus.New().WithField("service", "graphql")
+	logger.Level = logrus.DebugLevel
 
-	srv := handler.New(NewExecutableSchema(Config{Resolvers: &Resolver{}}))
+	srv := handler.New(NewExecutableSchema(Config{
+		Resolvers: NewResolver(cfg, s),
+	}))
 
 	srv.AddTransport(transport.Options{})
 	srv.AddTransport(transport.GET{})
@@ -41,7 +46,7 @@ func StartGqlServer(wg *sync.WaitGroup, ctx context.Context, cfg config.Config, 
 	}
 
 	go func() {
-		s.Logger.Infof("GraphQL Server starting on :%s", cfg.GetGraphQlPort())
+		logger.Infof("GraphQL Server starting on :%s", cfg.GetGraphQlPort())
 		if err := server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 			panic(fmt.Errorf("GraphQL server error: %v", err))
 		}
@@ -49,9 +54,9 @@ func StartGqlServer(wg *sync.WaitGroup, ctx context.Context, cfg config.Config, 
 
 	go func() {
 		<-ctx.Done()
-		s.Logger.Infof("Shutting down GraphQL server")
+		logger.Infof("Shutting down GraphQL server")
 		if err := server.Shutdown(context.Background()); err != nil {
-			s.Logger.Errorf("GraphQL server shutdown error: %v", err)
+			logger.Errorf("GraphQL server shutdown error: %v", err)
 		}
 	}()
 }
