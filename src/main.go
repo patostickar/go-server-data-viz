@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"github.com/patostickar/go-server-data-viz/config"
 	"github.com/patostickar/go-server-data-viz/datasource"
 	"github.com/patostickar/go-server-data-viz/graph"
 	"github.com/patostickar/go-server-data-viz/rest"
@@ -14,8 +15,9 @@ import (
 )
 
 func main() {
+	cfg := config.New()
+
 	s := service.New(
-		service.Config{HttpPort: "8080", GraphQlPort: "8081"},
 		service.PlotSettings{NumPlots: 1, NumPoints: 100, PollInterval: 1000},
 		datasource.NewInMemoryStore(),
 	)
@@ -27,10 +29,10 @@ func main() {
 	worker.StartDataGenerator(&wg, cancelCtx, s)
 
 	wg.Add(1)
-	rest.StartHTTPServer(&wg, cancelCtx, s)
+	rest.StartHTTPServer(&wg, cancelCtx, cfg, s)
 
 	wg.Add(1)
-	graph.StartGqlServer(&wg, cancelCtx, s)
+	graph.StartGqlServer(&wg, cancelCtx, cfg, s)
 
 	// Setup graceful shutdown
 	c := make(chan os.Signal, 1)

@@ -1,9 +1,12 @@
 module github.com/patostickar/go-server-data-viz
 
-go 1.22.12
+go 1.23
+
+toolchain go1.23.7
 
 require (
 	github.com/99designs/gqlgen v0.17.66
+	github.com/Netflix/go-env v0.1.2
 	github.com/gorilla/handlers v1.5.2
 	github.com/gorilla/mux v1.8.1
 	github.com/sirupsen/logrus v1.9.3

@@ -9,13 +9,14 @@ import (
 	"github.com/99designs/gqlgen/graphql/handler/lru"
 	"github.com/99designs/gqlgen/graphql/handler/transport"
 	"github.com/99designs/gqlgen/graphql/playground"
+	"github.com/patostickar/go-server-data-viz/config"
 	"github.com/patostickar/go-server-data-viz/service"
 	"github.com/vektah/gqlparser/v2/ast"
 	"net/http"
 	"sync"
 )
 
-func StartGqlServer(wg *sync.WaitGroup, ctx context.Context, s *service.Service) {
+func StartGqlServer(wg *sync.WaitGroup, ctx context.Context, cfg config.Config, s *service.Service) {
 	defer wg.Done()
 
 	srv := handler.New(NewExecutableSchema(Config{Resolvers: &Resolver{}}))
@@ -35,12 +36,12 @@ func StartGqlServer(wg *sync.WaitGroup, ctx context.Context, s *service.Service)
 	http.Handle("/query", srv)
 
 	server := &http.Server{
-		Addr:    ":" + s.Config.HttpPort,
+		Addr:    ":" + cfg.GetGraphQlPort(),
 		Handler: nil,
 	}
 
 	go func() {
-		s.Logger.Infof("GraphQL Server starting on :%s", s.Config.GraphQlPort)
+		s.Logger.Infof("GraphQL Server starting on :%s", cfg.GetGraphQlPort())
 		if err := server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 			panic(fmt.Errorf("GraphQL server error: %v", err))
 		}

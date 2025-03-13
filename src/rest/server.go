@@ -6,13 +6,14 @@ import (
 	"fmt"
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
+	"github.com/patostickar/go-server-data-viz/config"
 	"github.com/patostickar/go-server-data-viz/service"
 	"net/http"
 	"sync"
 	"time"
 )
 
-func StartHTTPServer(wg *sync.WaitGroup, ctx context.Context, s *service.Service) {
+func StartHTTPServer(wg *sync.WaitGroup, ctx context.Context, cfg config.Config, s *service.Service) {
 	defer wg.Done()
 
 	// Setup router and routes
@@ -38,7 +39,7 @@ func StartHTTPServer(wg *sync.WaitGroup, ctx context.Context, s *service.Service
 
 	// Configure the server
 	server := &http.Server{
-		Addr: "0.0.0.0:" + s.Config.HttpPort,
+		Addr: "0.0.0.0:" + cfg.GetHttpPort(),
 		// Good practice to set timeouts to avoid Slowloris attacks
 		WriteTimeout: time.Second * 15,
 		ReadTimeout:  time.Second * 15,
@@ -48,7 +49,7 @@ func StartHTTPServer(wg *sync.WaitGroup, ctx context.Context, s *service.Service
 
 	// Run server in s goroutine so it doesn't block
 	go func() {
-		s.Logger.Infof("HTTP Server starting on :8080")
+		s.Logger.Infof("HTTP Server starting on :%s", cfg.GetHttpPort())
 		if err := server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 			panic(fmt.Errorf("HTTP server error: %v", err))
 
