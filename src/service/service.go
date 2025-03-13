@@ -19,7 +19,7 @@ type PlotSettings struct {
 type Service struct {
 	Logger       *log.Logger
 	plotSettings PlotSettings
-	DataSource   datasource.DataSource
+	Store        datasource.DataSource
 	mu           sync.RWMutex
 }
 
@@ -27,7 +27,7 @@ func New(plotSettings PlotSettings, datasource datasource.DataSource) *Service {
 	return &Service{
 		Logger:       log.New(),
 		plotSettings: plotSettings,
-		DataSource:   datasource,
+		Store:        datasource,
 		mu:           sync.RWMutex{},
 	}
 }
@@ -82,7 +82,7 @@ func (s *Service) GenerateChartsData(numPlots, numPoints int, timestamp int64) {
 			Data:    points,
 		}
 	}
-	s.DataSource.SaveData(charts)
+	s.Store.Create("charts", charts)
 }
 
 func (s *Service) sineWave(x, frequency, phase float64) float64 {

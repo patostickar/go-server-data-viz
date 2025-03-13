@@ -2,14 +2,20 @@ package rest
 
 import (
 	"encoding/json"
-	"github.com/patostickar/go-server-data-viz/src/models"
 	"github.com/patostickar/go-server-data-viz/src/service"
 	"net/http"
 )
 
+// NewSettingsRequest represents the configuration requested by the client
+type NewSettingsRequest struct {
+	NumPlotsPerChart int `json:"numPlotsPerChart"`
+	NumPoints        int `json:"numPoints"`
+	PollInterval     int `json:"pollInterval"`
+}
+
 // settingsHandler updates the application configuration
 func settingsHandler(w http.ResponseWriter, r *http.Request, a *service.Service) {
-	var settings models.NewSettingsRequest
+	var settings NewSettingsRequest
 	if err := json.NewDecoder(r.Body).Decode(&settings); err != nil {
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
 		return
@@ -34,18 +40,28 @@ func settingsHandler(w http.ResponseWriter, r *http.Request, a *service.Service)
 
 	// Send response
 	w.Header().Set("Content-Type", "a/json")
-	json.NewEncoder(w).Encode(map[string]interface{}{
+	err := json.NewEncoder(w).Encode(map[string]interface{}{
 		"message":  "Configuration updated successfully",
 		"settings": settings,
 	})
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
 }
 
 // dataHandler returns the current chart data
 func dataHandler(w http.ResponseWriter, _ *http.Request, a *service.Service) {
-	data := a.DataSource.GetData()
+	data, err := a.Store.Read("charts")
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 
 	w.Header().Set("Content-Type", "a/json")
-	json.NewEncoder(w).Encode(data)
+	err = json.NewEncoder(w).Encode(data)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
 }
 
 // getSettingsHandler returns the current configuration
@@ -53,5 +69,8 @@ func getSettingsHandler(w http.ResponseWriter, _ *http.Request, a *service.Servi
 	currentConfig := a.GetSettings()
 
 	w.Header().Set("Content-Type", "a/json")
-	json.NewEncoder(w).Encode(currentConfig)
+	err := json.NewEncoder(w).Encode(currentConfig)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
 }

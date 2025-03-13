@@ -20,7 +20,7 @@ func main() {
 
 	s := service.New(
 		service.PlotSettings{NumPlots: 1, NumPoints: 100, PollInterval: 1000},
-		datasource.NewInMemoryStore(),
+		datasource.NewInMemoryDB(),
 	)
 
 	var wg sync.WaitGroup

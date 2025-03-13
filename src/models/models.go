@@ -11,10 +11,3 @@ type ChartData struct {
 	ChartID string       `json:"chartId"`
 	Data    []ChartPoint `json:"data"`
 }
-
-// NewSettingsRequest represents the configuration requested by the client
-type NewSettingsRequest struct {
-	NumPlotsPerChart int `json:"numPlotsPerChart"`
-	NumPoints        int `json:"numPoints"`
-	PollInterval     int `json:"pollInterval"`
-}
