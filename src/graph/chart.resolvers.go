@@ -27,7 +27,7 @@ func (r *queryResolver) GetCharts(_ context.Context) ([]*gqlmodel.ChartData, err
 		}
 		gqlCharts = append(gqlCharts, gqlChart)
 	}
-
+	r.logger.Debugf("returning %d charts", len(gqlCharts))
 	return gqlCharts, nil
 }
 

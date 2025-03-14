@@ -3,6 +3,7 @@ package rest
 import (
 	"encoding/json"
 	"github.com/patostickar/go-server-data-viz/src/config"
+	"github.com/patostickar/go-server-data-viz/src/models"
 	"github.com/patostickar/go-server-data-viz/src/service"
 	"net/http"
 )
@@ -15,7 +16,7 @@ type NewSettingsRequest struct {
 }
 
 // settingsHandler updates the application configuration
-func settingsHandler(w http.ResponseWriter, r *http.Request, a *service.Service) {
+func (s *Server) settingsHandler(w http.ResponseWriter, r *http.Request) {
 	var settings NewSettingsRequest
 	if err := json.NewDecoder(r.Body).Decode(&settings); err != nil {
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
@@ -33,14 +34,14 @@ func settingsHandler(w http.ResponseWriter, r *http.Request, a *service.Service)
 	}
 
 	// Update configuration
-	a.SetSettings(service.PlotSettings{
+	s.service.SetSettings(service.PlotSettings{
 		NumPlots:     settings.NumPlotsPerChart,
 		NumPoints:    settings.NumPoints,
 		PollInterval: settings.PollInterval,
 	})
 
 	// Send response
-	w.Header().Set("Content-Type", "a/json")
+	w.Header().Set("Content-Type", "s/json")
 	err := json.NewEncoder(w).Encode(map[string]interface{}{
 		"message":  "Configuration updated successfully",
 		"settings": settings,
@@ -51,25 +52,27 @@ func settingsHandler(w http.ResponseWriter, r *http.Request, a *service.Service)
 }
 
 // dataHandler returns the current chart data
-func dataHandler(w http.ResponseWriter, _ *http.Request, a *service.Service) {
-	data, err := a.Store.Read(config.ChartsKey)
+func (s *Server) dataHandler(w http.ResponseWriter, _ *http.Request) {
+	data, err := s.service.Store.Read(config.ChartsKey)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	w.Header().Set("Content-Type", "a/json")
+	w.Header().Set("Content-Type", "s/json")
 	err = json.NewEncoder(w).Encode(data)
 	if err != nil {
+		s.log.Error(err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
+	s.log.Debugf("returning %d charts", len(data.([]models.ChartData)))
 }
 
 // getSettingsHandler returns the current configuration
-func getSettingsHandler(w http.ResponseWriter, _ *http.Request, a *service.Service) {
-	currentConfig := a.GetSettings()
+func (s *Server) getSettingsHandler(w http.ResponseWriter, _ *http.Request) {
+	currentConfig := s.service.GetSettings()
 
-	w.Header().Set("Content-Type", "a/json")
+	w.Header().Set("Content-Type", "s/json")
 	err := json.NewEncoder(w).Encode(currentConfig)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)

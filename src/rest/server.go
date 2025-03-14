@@ -8,30 +8,48 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/patostickar/go-server-data-viz/src/config"
 	"github.com/patostickar/go-server-data-viz/src/service"
-	"github.com/sirupsen/logrus"
+	log "github.com/sirupsen/logrus"
 	"net/http"
 	"sync"
 	"time"
 )
 
-func StartHTTPServer(wg *sync.WaitGroup, ctx context.Context, cfg config.Config, s *service.Service) {
-	defer wg.Done()
+type Server struct {
+	server  *http.Server
+	log     *log.Entry
+	cfg     config.Config
+	service *service.Service
+	wg      *sync.WaitGroup
+	ctx     context.Context
+}
 
-	logger := logrus.New().WithField("service", "http")
-	logger.Level = logrus.DebugLevel
+func New(wg *sync.WaitGroup, ctx context.Context, cfg config.Config, s *service.Service) *Server {
+	logger := log.WithField("server", "http")
+
+	return &Server{
+		cfg:     cfg,
+		log:     logger,
+		service: s,
+		wg:      wg,
+		ctx:     ctx,
+	}
+}
+
+func (s *Server) StartHTTPServer() {
+	defer s.wg.Done()
 
 	// Setup router and routes
 	r := mux.NewRouter()
 	r.HandleFunc("/config", func(w http.ResponseWriter, r *http.Request) {
-		settingsHandler(w, r, s)
+		s.settingsHandler(w, r)
 	}).Methods("POST")
 
 	r.HandleFunc("/config", func(w http.ResponseWriter, r *http.Request) {
-		getSettingsHandler(w, r, s)
+		s.getSettingsHandler(w, r)
 	}).Methods("GET")
 
 	r.HandleFunc("/data", func(w http.ResponseWriter, r *http.Request) {
-		dataHandler(w, r, s)
+		s.dataHandler(w, r)
 	}).Methods("GET")
 
 	// Configure CORS
@@ -42,8 +60,8 @@ func StartHTTPServer(wg *sync.WaitGroup, ctx context.Context, cfg config.Config,
 	)
 
 	// Configure the server
-	server := &http.Server{
-		Addr: "0.0.0.0:" + cfg.GetHttpPort(),
+	s.server = &http.Server{
+		Addr: "0.0.0.0:" + s.cfg.GetHttpPort(),
 		// Good practice to set timeouts to avoid Slowloris attacks
 		WriteTimeout: time.Second * 15,
 		ReadTimeout:  time.Second * 15,
@@ -53,18 +71,18 @@ func StartHTTPServer(wg *sync.WaitGroup, ctx context.Context, cfg config.Config,
 
 	// Run server in s goroutine so it doesn't block
 	go func() {
-		logger.Infof("HTTP Server starting on :%s", cfg.GetHttpPort())
-		if err := server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+		s.log.Infof("HTTP Server starting on :%s", s.cfg.GetHttpPort())
+		if err := s.server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 			panic(fmt.Errorf("HTTP server error: %v", err))
 
 		}
 	}()
 
 	go func() {
-		<-ctx.Done()
-		logger.Infof("Shutting down HTTP server")
-		if err := server.Shutdown(context.Background()); err != nil {
-			logger.Errorf("HTTP server shutdown error: %v", err)
+		<-s.ctx.Done()
+		s.log.Infof("Shutting down HTTP server")
+		if err := s.server.Shutdown(context.Background()); err != nil {
+			s.log.Errorf("HTTP server shutdown error: %v", err)
 		}
 	}()
 

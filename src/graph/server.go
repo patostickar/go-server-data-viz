@@ -11,19 +11,37 @@ import (
 	"github.com/99designs/gqlgen/graphql/playground"
 	"github.com/patostickar/go-server-data-viz/src/config"
 	"github.com/patostickar/go-server-data-viz/src/service"
-	"github.com/sirupsen/logrus"
+	log "github.com/sirupsen/logrus"
 	"github.com/vektah/gqlparser/v2/ast"
 	"net/http"
 	"sync"
 )
 
-func StartGqlServer(wg *sync.WaitGroup, ctx context.Context, cfg config.Config, s *service.Service) {
-	defer wg.Done()
-	logger := logrus.New().WithField("service", "graphql")
-	logger.Level = logrus.DebugLevel
+type Server struct {
+	server  *http.Server
+	log     *log.Entry
+	cfg     config.Config
+	service *service.Service
+	wg      *sync.WaitGroup
+	ctx     context.Context
+}
+
+func New(wg *sync.WaitGroup, ctx context.Context, cfg config.Config, s *service.Service) *Server {
+	logger := log.WithField("server", "graphql")
+
+	return &Server{
+		cfg:     cfg,
+		log:     logger,
+		service: s,
+		wg:      wg,
+		ctx:     ctx,
+	}
+}
+func (s *Server) StartGqlServer() {
+	defer s.wg.Done()
 
 	srv := handler.New(NewExecutableSchema(Config{
-		Resolvers: NewResolver(cfg, s),
+		Resolvers: NewResolver(&s.cfg, s.log, s.service),
 	}))
 
 	srv.AddTransport(transport.Options{})
@@ -41,22 +59,22 @@ func StartGqlServer(wg *sync.WaitGroup, ctx context.Context, cfg config.Config, 
 	http.Handle("/query", srv)
 
 	server := &http.Server{
-		Addr:    ":" + cfg.GetGraphQlPort(),
+		Addr:    ":" + s.cfg.GetGraphQlPort(),
 		Handler: nil,
 	}
 
 	go func() {
-		logger.Infof("GraphQL Server starting on :%s", cfg.GetGraphQlPort())
+		s.log.Infof("GraphQL Server starting on :%s", s.cfg.GetGraphQlPort())
 		if err := server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 			panic(fmt.Errorf("GraphQL server error: %v", err))
 		}
 	}()
 
 	go func() {
-		<-ctx.Done()
-		logger.Infof("Shutting down GraphQL server")
+		<-s.ctx.Done()
+		s.log.Infof("Shutting down GraphQL server")
 		if err := server.Shutdown(context.Background()); err != nil {
-			logger.Errorf("GraphQL server shutdown error: %v", err)
+			s.log.Errorf("GraphQL server shutdown error: %v", err)
 		}
 	}()
 }

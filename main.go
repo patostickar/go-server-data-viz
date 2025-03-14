@@ -8,7 +8,7 @@ import (
 	"github.com/patostickar/go-server-data-viz/src/rest"
 	"github.com/patostickar/go-server-data-viz/src/service"
 	"github.com/patostickar/go-server-data-viz/src/worker"
-	"github.com/sirupsen/logrus"
+	log "github.com/sirupsen/logrus"
 
 	"os"
 	"os/signal"
@@ -17,8 +17,9 @@ import (
 )
 
 func main() {
-	logger := logrus.New().WithField("service", "go-server-data-viz")
-	logger.Level = logrus.DebugLevel
+	log.SetLevel(log.DebugLevel)
+	logger := log.WithField("service", "go-server-data-viz")
+
 	cfg := config.New()
 
 	s := service.New(
@@ -33,10 +34,10 @@ func main() {
 	worker.StartDataGenerator(&wg, cancelCtx, s)
 
 	wg.Add(1)
-	rest.StartHTTPServer(&wg, cancelCtx, cfg, s)
+	rest.New(&wg, cancelCtx, cfg, s).StartHTTPServer()
 
 	wg.Add(1)
-	graph.StartGqlServer(&wg, cancelCtx, cfg, s)
+	graph.New(&wg, cancelCtx, cfg, s).StartGqlServer()
 
 	// Setup graceful shutdown
 	c := make(chan os.Signal, 1)

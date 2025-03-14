@@ -3,15 +3,14 @@ package worker
 import (
 	"context"
 	"github.com/patostickar/go-server-data-viz/src/service"
-	"github.com/sirupsen/logrus"
+	log "github.com/sirupsen/logrus"
 	"sync"
 	"time"
 )
 
 // StartDataGenerator initializes and starts the data generation routine
 func StartDataGenerator(wg *sync.WaitGroup, ctx context.Context, s *service.Service) {
-	logger := logrus.New().WithField("service", "data-generator")
-	logger.Level = logrus.DebugLevel
+	logger := log.WithField("worker", "data-generator")
 
 	settings := s.GetSettings()
 	go func() {
@@ -25,10 +24,11 @@ func StartDataGenerator(wg *sync.WaitGroup, ctx context.Context, s *service.Serv
 				time.Sleep(time.Duration(settings.PollInterval) * time.Millisecond)
 				timestamp := time.Now().Unix()
 				s.GenerateChartsData(settings.NumPlots, settings.NumPoints, timestamp)
-				logger.Infof("Generated data at %s for %d plot per chart with %d points",
-					time.Unix(timestamp, 0).Format("15:04:05"),
-					settings.NumPlots,
-					settings.NumPoints)
+				logger.WithFields(log.Fields{
+					"timestamp": timestamp,
+					"numPlots":  settings.NumPlots,
+					"numPoints": settings.NumPoints,
+				}).Debug("Generated data")
 			}
 		}
 	}()

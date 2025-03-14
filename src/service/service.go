@@ -18,15 +18,17 @@ type PlotSettings struct {
 }
 
 type Service struct {
-	logger       *log.Logger
+	logger       *log.Entry
 	plotSettings PlotSettings
 	Store        datasource.DataSource
 	mu           sync.RWMutex
 }
 
 func New(plotSettings PlotSettings, datasource datasource.DataSource) *Service {
+	logger := log.WithField("service", "service")
+
 	return &Service{
-		logger:       log.New(),
+		logger:       logger,
 		plotSettings: plotSettings,
 		Store:        datasource,
 		mu:           sync.RWMutex{},
