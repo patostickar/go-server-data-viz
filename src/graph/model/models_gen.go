@@ -8,7 +8,7 @@ type ChartData struct {
 }
 
 type ChartDataTimestamp struct {
-	Timestamp int32        `json:"timestamp"`
+	Timestamp int64        `json:"timestamp"`
 	ChartData []*ChartData `json:"chartData"`
 }
 

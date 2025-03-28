@@ -13,7 +13,7 @@ type Config interface {
 }
 
 type config struct {
-	HttpPort    string `env:"HTTP_PORT,default=8080"`
+	HttpPort    string `env:"REST_PORT,default=8080"`
 	GraphQlPort string `env:"GRAPHQL_PORT,default=8081"`
 }
 

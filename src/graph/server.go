@@ -9,6 +9,7 @@ import (
 	"github.com/99designs/gqlgen/graphql/handler/lru"
 	"github.com/99designs/gqlgen/graphql/handler/transport"
 	"github.com/99designs/gqlgen/graphql/playground"
+	"github.com/gorilla/handlers"
 	"github.com/patostickar/go-server-data-viz/src/config"
 	"github.com/patostickar/go-server-data-viz/src/service"
 	log "github.com/sirupsen/logrus"
@@ -55,9 +56,15 @@ func (s *Server) StartGqlServer() error {
 	http.Handle("/", playground.Handler("GraphQL playground", "/query"))
 	http.Handle("/query", srv)
 
+	corsHandler := handlers.CORS(
+		handlers.AllowedOrigins([]string{"*"}), // Allow all origins (change this in production)
+		handlers.AllowedMethods([]string{"GET", "POST", "OPTIONS"}),
+		handlers.AllowedHeaders([]string{"Content-Type", "Authorization", "Timing-Allow-Origin"}),
+	)
+
 	server := &http.Server{
 		Addr:    ":" + s.cfg.GetGraphQlPort(),
-		Handler: nil,
+		Handler: corsHandler(srv),
 	}
 
 	g := errgroup.Group{}

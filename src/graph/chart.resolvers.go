@@ -30,7 +30,7 @@ func (r *queryResolver) GetCharts(ctx context.Context) (*gqlmodel.ChartDataTimes
 	}
 	r.logger.Debugf("returning %d charts", len(chartData))
 	res := gqlmodel.ChartDataTimestamp{
-		Timestamp: int32(time.Now().UnixMilli()),
+		Timestamp: time.Now().UnixMilli(),
 		ChartData: chartData,
 	}
 	return &res, nil
