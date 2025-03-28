@@ -13,13 +13,8 @@ type ChartDataTimestamp struct {
 }
 
 type ChartPoint struct {
-	Timestamp string          `json:"timestamp"`
-	Values    []*KeyValuePair `json:"values"`
-}
-
-type KeyValuePair struct {
-	Key   string  `json:"key"`
-	Value float64 `json:"value"`
+	Timestamp string    `json:"timestamp"`
+	Values    []float64 `json:"values"`
 }
 
 type Query struct {

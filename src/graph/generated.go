@@ -60,11 +60,6 @@ type ComplexityRoot struct {
 		Values    func(childComplexity int) int
 	}
 
-	KeyValuePair struct {
-		Key   func(childComplexity int) int
-		Value func(childComplexity int) int
-	}
-
 	Query struct {
 		GetCharts func(childComplexity int) int
 	}
@@ -134,20 +129,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.ChartPoint.Values(childComplexity), true
-
-	case "KeyValuePair.key":
-		if e.complexity.KeyValuePair.Key == nil {
-			break
-		}
-
-		return e.complexity.KeyValuePair.Key(childComplexity), true
-
-	case "KeyValuePair.value":
-		if e.complexity.KeyValuePair.Value == nil {
-			break
-		}
-
-		return e.complexity.KeyValuePair.Value(childComplexity), true
 
 	case "Query.getCharts":
 		if e.complexity.Query.GetCharts == nil {
@@ -247,14 +228,9 @@ func (ec *executionContext) introspectType(name string) (*introspection.Type, er
 var sources = []*ast.Source{
 	{Name: "../../models/graphql/chart.graphqls", Input: `scalar Int64
 
-type KeyValuePair {
-    key: String!
-    value: Float!
-}
-
 type ChartPoint {
     timestamp: String!
-    values: [KeyValuePair!]!
+    values: [Float!]!
 }
 
 type ChartData {
@@ -658,108 +634,14 @@ func (ec *executionContext) _ChartPoint_values(ctx context.Context, field graphq
 		}
 		return graphql.Null
 	}
-	res := resTmp.([]*model.KeyValuePair)
+	res := resTmp.([]float64)
 	fc.Result = res
-	return ec.marshalNKeyValuePair2ᚕᚖgithubᚗcomᚋpatostickarᚋgoᚑserverᚑdataᚑvizᚋsrcᚋgraphᚋmodelᚐKeyValuePairᚄ(ctx, field.Selections, res)
+	return ec.marshalNFloat2ᚕfloat64ᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_ChartPoint_values(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "ChartPoint",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "key":
-				return ec.fieldContext_KeyValuePair_key(ctx, field)
-			case "value":
-				return ec.fieldContext_KeyValuePair_value(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type KeyValuePair", field.Name)
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _KeyValuePair_key(ctx context.Context, field graphql.CollectedField, obj *model.KeyValuePair) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_KeyValuePair_key(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Key, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_KeyValuePair_key(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "KeyValuePair",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _KeyValuePair_value(ctx context.Context, field graphql.CollectedField, obj *model.KeyValuePair) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_KeyValuePair_value(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Value, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(float64)
-	fc.Result = res
-	return ec.marshalNFloat2float64(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_KeyValuePair_value(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "KeyValuePair",
 		Field:      field,
 		IsMethod:   false,
 		IsResolver: false,
@@ -3039,50 +2921,6 @@ func (ec *executionContext) _ChartPoint(ctx context.Context, sel ast.SelectionSe
 	return out
 }
 
-var keyValuePairImplementors = []string{"KeyValuePair"}
-
-func (ec *executionContext) _KeyValuePair(ctx context.Context, sel ast.SelectionSet, obj *model.KeyValuePair) graphql.Marshaler {
-	fields := graphql.CollectFields(ec.OperationContext, sel, keyValuePairImplementors)
-
-	out := graphql.NewFieldSet(fields)
-	deferred := make(map[string]*graphql.FieldSet)
-	for i, field := range fields {
-		switch field.Name {
-		case "__typename":
-			out.Values[i] = graphql.MarshalString("KeyValuePair")
-		case "key":
-			out.Values[i] = ec._KeyValuePair_key(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
-		case "value":
-			out.Values[i] = ec._KeyValuePair_value(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
-		default:
-			panic("unknown field " + strconv.Quote(field.Name))
-		}
-	}
-	out.Dispatch(ctx)
-	if out.Invalids > 0 {
-		return graphql.Null
-	}
-
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
-
-	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
-			Label:    label,
-			Path:     graphql.GetPath(ctx),
-			FieldSet: dfs,
-			Context:  ctx,
-		})
-	}
-
-	return out
-}
-
 var queryImplementors = []string{"Query"}
 
 func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) graphql.Marshaler {
@@ -3625,6 +3463,36 @@ func (ec *executionContext) marshalNFloat2float64(ctx context.Context, sel ast.S
 	return graphql.WrapContextMarshaler(ctx, res)
 }
 
+func (ec *executionContext) unmarshalNFloat2ᚕfloat64ᚄ(ctx context.Context, v any) ([]float64, error) {
+	var vSlice []any
+	vSlice = graphql.CoerceList(v)
+	var err error
+	res := make([]float64, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalNFloat2float64(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) marshalNFloat2ᚕfloat64ᚄ(ctx context.Context, sel ast.SelectionSet, v []float64) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	for i := range v {
+		ret[i] = ec.marshalNFloat2float64(ctx, sel, v[i])
+	}
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
 func (ec *executionContext) unmarshalNInt642int64(ctx context.Context, v any) (int64, error) {
 	res, err := graphql.UnmarshalInt64(v)
 	return res, graphql.ErrorOnPath(ctx, err)
@@ -3638,60 +3506,6 @@ func (ec *executionContext) marshalNInt642int64(ctx context.Context, sel ast.Sel
 		}
 	}
 	return res
-}
-
-func (ec *executionContext) marshalNKeyValuePair2ᚕᚖgithubᚗcomᚋpatostickarᚋgoᚑserverᚑdataᚑvizᚋsrcᚋgraphᚋmodelᚐKeyValuePairᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.KeyValuePair) graphql.Marshaler {
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		fc := &graphql.FieldContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithFieldContext(ctx, fc)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalNKeyValuePair2ᚖgithubᚗcomᚋpatostickarᚋgoᚑserverᚑdataᚑvizᚋsrcᚋgraphᚋmodelᚐKeyValuePair(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
-
-	for _, e := range ret {
-		if e == graphql.Null {
-			return graphql.Null
-		}
-	}
-
-	return ret
-}
-
-func (ec *executionContext) marshalNKeyValuePair2ᚖgithubᚗcomᚋpatostickarᚋgoᚑserverᚑdataᚑvizᚋsrcᚋgraphᚋmodelᚐKeyValuePair(ctx context.Context, sel ast.SelectionSet, v *model.KeyValuePair) graphql.Marshaler {
-	if v == nil {
-		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
-		}
-		return graphql.Null
-	}
-	return ec._KeyValuePair(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalNString2string(ctx context.Context, v any) (string, error) {

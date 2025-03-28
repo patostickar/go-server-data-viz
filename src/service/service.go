@@ -64,14 +64,13 @@ func (s *Service) GenerateChartsData(numPlots, numPoints int, timestamp int64) {
 			x := float64(i) * 0.1
 			currentTimestamp := timestamp + int64(i)
 
-			values := make(map[string]float64)
+			values := make([]float64, numPlots)
 
 			for plotIndex := 0; plotIndex < numPlots; plotIndex++ {
 				frequency := 0.5 + float64(chartIndex)*0.5 + float64(plotIndex)*0.2
 				phase := float64(timestamp)/10.0 + float64(chartIndex)*math.Pi/4 + float64(plotIndex)*math.Pi/8
 
-				plotID := fmt.Sprintf("plot%d", plotIndex+1)
-				values[plotID] = waveFunctions[chartIndex](x, frequency, phase)
+				values[plotIndex] = waveFunctions[chartIndex](x, frequency, phase)
 			}
 
 			points[i] = models.ChartPoint{

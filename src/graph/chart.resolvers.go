@@ -36,29 +36,19 @@ func (r *queryResolver) GetCharts(ctx context.Context) (*gqlmodel.ChartDataTimes
 	return &res, nil
 }
 
+// Query returns QueryResolver implementation.
+func (r *Resolver) Query() QueryResolver { return &queryResolver{r} }
+
+type queryResolver struct{ *Resolver }
+
 func convertChartPoints(storePoints []models.ChartPoint) []*gqlmodel.ChartPoint {
 	var gqlPoints []*gqlmodel.ChartPoint
 	for _, point := range storePoints {
 		gqlPoint := &gqlmodel.ChartPoint{
 			Timestamp: point.Timestamp,
-			Values:    convertValues(point.Values),
+			Values:    point.Values,
 		}
 		gqlPoints = append(gqlPoints, gqlPoint)
 	}
 	return gqlPoints
 }
-func convertValues(values map[string]float64) []*gqlmodel.KeyValuePair {
-	var keyValuePairs []*gqlmodel.KeyValuePair
-	for key, value := range values {
-		keyValuePairs = append(keyValuePairs, &gqlmodel.KeyValuePair{
-			Key:   key,
-			Value: value,
-		})
-	}
-	return keyValuePairs
-}
-
-// Query returns QueryResolver implementation.
-func (r *Resolver) Query() QueryResolver { return &queryResolver{r} }
-
-type queryResolver struct{ *Resolver }
