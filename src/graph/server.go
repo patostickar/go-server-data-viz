@@ -13,8 +13,8 @@ import (
 	"github.com/patostickar/go-server-data-viz/src/service"
 	log "github.com/sirupsen/logrus"
 	"github.com/vektah/gqlparser/v2/ast"
+	"golang.org/x/sync/errgroup"
 	"net/http"
-	"sync"
 )
 
 type Server struct {
@@ -22,23 +22,20 @@ type Server struct {
 	log     *log.Entry
 	cfg     config.Config
 	service *service.Service
-	wg      *sync.WaitGroup
 	ctx     context.Context
 }
 
-func New(wg *sync.WaitGroup, ctx context.Context, cfg config.Config, s *service.Service) *Server {
+func New(ctx context.Context, cfg config.Config, s *service.Service) *Server {
 	logger := log.WithField("server", "graphql")
 
 	return &Server{
 		cfg:     cfg,
 		log:     logger,
 		service: s,
-		wg:      wg,
 		ctx:     ctx,
 	}
 }
-func (s *Server) StartGqlServer() {
-	defer s.wg.Done()
+func (s *Server) StartGqlServer() error {
 
 	srv := handler.New(NewExecutableSchema(Config{
 		Resolvers: NewResolver(&s.cfg, s.log, s.service),
@@ -63,18 +60,24 @@ func (s *Server) StartGqlServer() {
 		Handler: nil,
 	}
 
-	go func() {
+	g := errgroup.Group{}
+
+	g.Go(func() error {
 		s.log.Infof("GraphQL Server starting on :%s", s.cfg.GetGraphQlPort())
 		if err := server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
-			panic(fmt.Errorf("GraphQL server error: %v", err))
+			return fmt.Errorf("GraphQL server error: %v", err)
 		}
-	}()
+		return nil
+	})
 
-	go func() {
+	g.Go(func() error {
 		<-s.ctx.Done()
 		s.log.Infof("Shutting down GraphQL server")
 		if err := server.Shutdown(context.Background()); err != nil {
-			s.log.Errorf("GraphQL server shutdown error: %v", err)
+			return fmt.Errorf("GraphQL server shutdown error: %v", err)
 		}
-	}()
+		return nil
+	})
+
+	return g.Wait()
 }

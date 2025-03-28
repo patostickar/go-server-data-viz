@@ -9,16 +9,19 @@ import (
 	"github.com/patostickar/go-server-data-viz/src/service"
 	"github.com/patostickar/go-server-data-viz/src/worker"
 	log "github.com/sirupsen/logrus"
-
+	"golang.org/x/sync/errgroup"
 	"os"
 	"os/signal"
-	"sync"
+	"syscall"
 	"time"
 )
 
 func main() {
 	log.SetLevel(log.DebugLevel)
-	logger := log.WithField("service", "go-server-data-viz")
+	logger := log.NewEntry(log.StandardLogger())
+
+	mainCtx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
 
 	cfg := config.New()
 
@@ -27,45 +30,58 @@ func main() {
 		datasource.NewInMemoryDB(),
 	)
 
-	var wg sync.WaitGroup
+	g, gCtx := errgroup.WithContext(mainCtx)
 
-	cancelCtx, cancel := context.WithCancel(context.Background())
-	wg.Add(1)
-	worker.StartDataGenerator(&wg, cancelCtx, s)
+	// Start data generator worker
+	g.Go(func() error {
+		return worker.StartDataGenerator(gCtx, s)
+	})
 
-	wg.Add(1)
-	rest.New(&wg, cancelCtx, cfg, s).StartHTTPServer()
+	// Start HTTP server
+	g.Go(func() error {
+		return rest.New(gCtx, cfg, s).StartHTTPServer()
+	})
 
-	wg.Add(1)
-	graph.New(&wg, cancelCtx, cfg, s).StartGqlServer()
+	// Start GraphQL server
+	g.Go(func() error {
+		return graph.New(gCtx, cfg, s).StartGqlServer()
+	})
 
-	// Setup graceful shutdown
-	c := make(chan os.Signal, 1)
-	signal.Notify(c, os.Interrupt)
-
-	// Block until we receive our signal
-	<-c
-	logger.Infof("Shutdown signal received")
-	cancel()
-
-	// Create s deadline to wait for
-	timeoutCtx, cancel := context.WithTimeout(context.Background(), time.Second*5)
-	defer cancel()
-
-	// Wait for all goroutines to finish (with s timeout)
-	done := make(chan struct{})
+	shutDownErrorChan := make(chan error, 1)
 	go func() {
-		wg.Wait()
-		close(done)
+		err := g.Wait()
+		if err != nil {
+			shutDownErrorChan <- err
+		}
+		close(shutDownErrorChan)
 	}()
 
+	forceShutdownTimeout := time.Second * 1
+
 	select {
-	case <-done:
-		logger.Infof("All services shut down properly")
-	case <-timeoutCtx.Done():
-		logger.Error("Shutdown timed out, forcing exit")
+	case <-mainCtx.Done():
+		logger.Info("Termination signal received. Initiating shutdown...")
+
+		timeoutCtx, cancel := context.WithTimeout(context.Background(), forceShutdownTimeout)
+		defer cancel()
+
+		select {
+		case err := <-shutDownErrorChan:
+			if err != nil {
+				logger.Errorf("Application error: %v", err)
+				os.Exit(1)
+			}
+		case <-timeoutCtx.Done():
+			logger.Errorf("Application forced shutdown after %s", forceShutdownTimeout)
+			os.Exit(1)
+		}
+
+	case err := <-shutDownErrorChan:
+		if err != nil {
+			logger.Errorf("Application error: %v", err)
+			os.Exit(1)
+		}
 	}
 
-	logger.Infof("Exiting")
-	os.Exit(0)
+	logger.Info("Application shutdown complete")
 }

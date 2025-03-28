@@ -9,8 +9,9 @@ import (
 	"github.com/patostickar/go-server-data-viz/src/config"
 	"github.com/patostickar/go-server-data-viz/src/service"
 	log "github.com/sirupsen/logrus"
+	"golang.org/x/sync/errgroup"
+	"net"
 	"net/http"
-	"sync"
 	"time"
 )
 
@@ -19,25 +20,21 @@ type Server struct {
 	log     *log.Entry
 	cfg     config.Config
 	service *service.Service
-	wg      *sync.WaitGroup
 	ctx     context.Context
 }
 
-func New(wg *sync.WaitGroup, ctx context.Context, cfg config.Config, s *service.Service) *Server {
+func New(ctx context.Context, cfg config.Config, s *service.Service) *Server {
 	logger := log.WithField("server", "http")
 
 	return &Server{
 		cfg:     cfg,
 		log:     logger,
 		service: s,
-		wg:      wg,
 		ctx:     ctx,
 	}
 }
 
-func (s *Server) StartHTTPServer() {
-	defer s.wg.Done()
-
+func (s *Server) StartHTTPServer() error {
 	// Setup router and routes
 	r := mux.NewRouter()
 	r.HandleFunc("/config", func(w http.ResponseWriter, r *http.Request) {
@@ -67,23 +64,27 @@ func (s *Server) StartHTTPServer() {
 		ReadTimeout:  time.Second * 15,
 		IdleTimeout:  time.Second * 60,
 		Handler:      corsHandler(r),
+		ConnContext:  func(ctx context.Context, c net.Conn) context.Context { return ctx },
 	}
 
+	g := errgroup.Group{}
+
 	// Run server in s goroutine so it doesn't block
-	go func() {
+	g.Go(func() error {
 		s.log.Infof("HTTP Server starting on :%s", s.cfg.GetHttpPort())
 		if err := s.server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
-			panic(fmt.Errorf("HTTP server error: %v", err))
-
+			return fmt.Errorf("HTTP server error: %v", err)
 		}
-	}()
+		return nil
+	})
 
-	go func() {
+	g.Go(func() error {
 		<-s.ctx.Done()
 		s.log.Infof("Shutting down HTTP server")
 		if err := s.server.Shutdown(context.Background()); err != nil {
 			s.log.Errorf("HTTP server shutdown error: %v", err)
 		}
-	}()
-
+		return nil
+	})
+	return g.Wait()
 }
