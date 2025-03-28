@@ -6,15 +6,41 @@ package graph
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	"github.com/patostickar/go-server-data-viz/src/config"
 	gqlmodel "github.com/patostickar/go-server-data-viz/src/graph/model"
+	t "github.com/patostickar/go-server-data-viz/src/graph/transformer"
 	"github.com/patostickar/go-server-data-viz/src/models"
+	"github.com/patostickar/go-server-data-viz/src/service"
 )
 
+// UpdateSettings is the resolver for the updateSettings field.
+func (r *mutationResolver) UpdateSettings(_ context.Context, settings gqlmodel.SettingsInput) (*gqlmodel.Settings, error) {
+	if int(*settings.NumPlotsPerChart) < 1 || int(*settings.NumPlotsPerChart) > 100 {
+		return nil, errors.New("NumPlots must be between 1 and 100")
+	}
+
+	if int(*settings.NumPoints) < 10 || int(*settings.NumPoints) > 1_000_000 {
+		return nil, errors.New("NumPlots must be between 10 and 1,000,000")
+	}
+
+	r.s.SetSettings(service.PlotSettings{
+		NumPlots:     int(*settings.NumPlotsPerChart),
+		NumPoints:    int(*settings.NumPoints),
+		PollInterval: int(*settings.PollInterval),
+	})
+
+	return &gqlmodel.Settings{
+		NumPlotsPerChart: *settings.NumPlotsPerChart,
+		NumPoints:        *settings.NumPoints,
+		PollInterval:     *settings.PollInterval,
+	}, nil
+}
+
 // GetCharts is the resolver for the getCharts field.
-func (r *queryResolver) GetCharts(ctx context.Context) (*gqlmodel.ChartDataTimestamp, error) {
+func (r *queryResolver) GetCharts(_ context.Context) (*gqlmodel.ChartDataTimestamp, error) {
 	charts, err := r.s.Store.Read(config.ChartsKey)
 	if err != nil {
 		return nil, err
@@ -24,7 +50,7 @@ func (r *queryResolver) GetCharts(ctx context.Context) (*gqlmodel.ChartDataTimes
 	for _, chart := range charts.([]models.ChartData) {
 		gqlChart := &gqlmodel.ChartData{
 			ChartID: chart.ChartID,
-			Data:    convertChartPoints(chart.Data),
+			Data:    t.ChartPoints2Gql(chart.Data),
 		}
 		chartData = append(chartData, gqlChart)
 	}
@@ -36,19 +62,22 @@ func (r *queryResolver) GetCharts(ctx context.Context) (*gqlmodel.ChartDataTimes
 	return &res, nil
 }
 
+// Settings is the resolver for the settings field.
+func (r *queryResolver) Settings(_ context.Context) (*gqlmodel.Settings, error) {
+	settings := r.s.GetSettings()
+
+	return &gqlmodel.Settings{
+		NumPlotsPerChart: int32(settings.NumPlots),
+		NumPoints:        int32(settings.NumPoints),
+		PollInterval:     int32(settings.PollInterval),
+	}, nil
+}
+
+// Mutation returns MutationResolver implementation.
+func (r *Resolver) Mutation() MutationResolver { return &mutationResolver{r} }
+
 // Query returns QueryResolver implementation.
 func (r *Resolver) Query() QueryResolver { return &queryResolver{r} }
 
+type mutationResolver struct{ *Resolver }
 type queryResolver struct{ *Resolver }
-
-func convertChartPoints(storePoints []models.ChartPoint) []*gqlmodel.ChartPoint {
-	var gqlPoints []*gqlmodel.ChartPoint
-	for _, point := range storePoints {
-		gqlPoint := &gqlmodel.ChartPoint{
-			Timestamp: point.Timestamp,
-			Values:    point.Values,
-		}
-		gqlPoints = append(gqlPoints, gqlPoint)
-	}
-	return gqlPoints
-}

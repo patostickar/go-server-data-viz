@@ -17,5 +17,20 @@ type ChartPoint struct {
 	Values    []float64 `json:"values"`
 }
 
+type Mutation struct {
+}
+
 type Query struct {
+}
+
+type Settings struct {
+	NumPlotsPerChart int32 `json:"NumPlotsPerChart"`
+	NumPoints        int32 `json:"NumPoints"`
+	PollInterval     int32 `json:"PollInterval"`
+}
+
+type SettingsInput struct {
+	NumPlotsPerChart *int32 `json:"NumPlotsPerChart,omitempty"`
+	NumPoints        *int32 `json:"NumPoints,omitempty"`
+	PollInterval     *int32 `json:"PollInterval,omitempty"`
 }

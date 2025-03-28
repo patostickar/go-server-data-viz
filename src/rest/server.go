@@ -37,14 +37,6 @@ func New(ctx context.Context, cfg config.Config, s *service.Service) *Server {
 func (s *Server) StartHTTPServer() error {
 	// Setup router and routes
 	r := mux.NewRouter()
-	r.HandleFunc("/config", func(w http.ResponseWriter, r *http.Request) {
-		s.settingsHandler(w, r)
-	}).Methods("POST")
-
-	r.HandleFunc("/config", func(w http.ResponseWriter, r *http.Request) {
-		s.getSettingsHandler(w, r)
-	}).Methods("GET")
-
 	r.HandleFunc("/data", func(w http.ResponseWriter, r *http.Request) {
 		s.dataHandler(w, r)
 	}).Methods("GET")
