@@ -44,7 +44,8 @@ func (s *Service) GetSettings() PlotSettings {
 func (s *Service) SetSettings(settings PlotSettings) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	s.plotSettings = settings
+	s.plotSettings.NumPlots = settings.NumPlots
+	s.plotSettings.NumPoints = settings.NumPoints
 }
 
 func (s *Service) GenerateChartsData(numPlots, numPoints int, timestamp int64) {

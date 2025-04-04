@@ -11,15 +11,15 @@ import (
 func StartDataGenerator(ctx context.Context, s *service.Service) error {
 	logger := log.WithField("worker", "data-generator")
 
-	settings := s.GetSettings()
 	for {
 		select {
 		case <-ctx.Done():
 			logger.Infof("Data generator stopping due to shutdown signal")
 			return nil
 		default:
-			time.Sleep(time.Duration(settings.PollInterval) * time.Millisecond)
+			settings := s.GetSettings()
 			timestamp := time.Now().Unix()
+			time.Sleep(time.Duration(settings.PollInterval) * time.Millisecond)
 			s.GenerateChartsData(settings.NumPlots, settings.NumPoints, timestamp)
 			logger.WithFields(log.Fields{
 				"timestamp": timestamp,

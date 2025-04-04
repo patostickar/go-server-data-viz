@@ -26,6 +26,8 @@ func (r *mutationResolver) UpdateSettings(ctx context.Context, settings gqlmodel
 		return nil, errors.New("NumPlots must be between 10 and 1,000,000")
 	}
 
+	r.logger.Infof("Updating settings: %d plots, %d points", int(*settings.NumPlotsPerChart), int(*settings.NumPoints))
+
 	r.s.SetSettings(service.PlotSettings{
 		NumPlots:  int(*settings.NumPlotsPerChart),
 		NumPoints: int(*settings.NumPoints),
