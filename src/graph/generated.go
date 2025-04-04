@@ -73,7 +73,6 @@ type ComplexityRoot struct {
 	Settings struct {
 		NumPlotsPerChart func(childComplexity int) int
 		NumPoints        func(childComplexity int) int
-		PollInterval     func(childComplexity int) int
 	}
 }
 
@@ -185,13 +184,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Settings.NumPoints(childComplexity), true
-
-	case "Settings.PollInterval":
-		if e.complexity.Settings.PollInterval == nil {
-			break
-		}
-
-		return e.complexity.Settings.PollInterval(childComplexity), true
 
 	}
 	return 0, false
@@ -319,13 +311,11 @@ type ChartDataTimestamp {
 type Settings {
     NumPlotsPerChart: Int!
     NumPoints: Int!
-    PollInterval: Int!
 }
 
 input SettingsInput {
     NumPlotsPerChart: Int
     NumPoints: Int
-    PollInterval: Int
 }
 
 type Query {
@@ -805,8 +795,6 @@ func (ec *executionContext) fieldContext_Mutation_updateSettings(ctx context.Con
 				return ec.fieldContext_Settings_NumPlotsPerChart(ctx, field)
 			case "NumPoints":
 				return ec.fieldContext_Settings_NumPoints(ctx, field)
-			case "PollInterval":
-				return ec.fieldContext_Settings_PollInterval(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Settings", field.Name)
 		},
@@ -912,8 +900,6 @@ func (ec *executionContext) fieldContext_Query_settings(_ context.Context, field
 				return ec.fieldContext_Settings_NumPlotsPerChart(ctx, field)
 			case "NumPoints":
 				return ec.fieldContext_Settings_NumPoints(ctx, field)
-			case "PollInterval":
-				return ec.fieldContext_Settings_PollInterval(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Settings", field.Name)
 		},
@@ -1128,50 +1114,6 @@ func (ec *executionContext) _Settings_NumPoints(ctx context.Context, field graph
 }
 
 func (ec *executionContext) fieldContext_Settings_NumPoints(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "Settings",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Int does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _Settings_PollInterval(ctx context.Context, field graphql.CollectedField, obj *model.Settings) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Settings_PollInterval(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.PollInterval, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(int32)
-	fc.Result = res
-	return ec.marshalNInt2int32(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_Settings_PollInterval(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Settings",
 		Field:      field,
@@ -3142,7 +3084,7 @@ func (ec *executionContext) unmarshalInputSettingsInput(ctx context.Context, obj
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"NumPlotsPerChart", "NumPoints", "PollInterval"}
+	fieldsInOrder := [...]string{"NumPlotsPerChart", "NumPoints"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -3163,13 +3105,6 @@ func (ec *executionContext) unmarshalInputSettingsInput(ctx context.Context, obj
 				return it, err
 			}
 			it.NumPoints = data
-		case "PollInterval":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("PollInterval"))
-			data, err := ec.unmarshalOInt2ᚖint32(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.PollInterval = data
 		}
 	}
 
@@ -3468,11 +3403,6 @@ func (ec *executionContext) _Settings(ctx context.Context, sel ast.SelectionSet,
 			}
 		case "NumPoints":
 			out.Values[i] = ec._Settings_NumPoints(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
-		case "PollInterval":
-			out.Values[i] = ec._Settings_PollInterval(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}

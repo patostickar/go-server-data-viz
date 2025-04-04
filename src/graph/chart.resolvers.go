@@ -17,7 +17,7 @@ import (
 )
 
 // UpdateSettings is the resolver for the updateSettings field.
-func (r *mutationResolver) UpdateSettings(_ context.Context, settings gqlmodel.SettingsInput) (*gqlmodel.Settings, error) {
+func (r *mutationResolver) UpdateSettings(ctx context.Context, settings gqlmodel.SettingsInput) (*gqlmodel.Settings, error) {
 	if int(*settings.NumPlotsPerChart) < 1 || int(*settings.NumPlotsPerChart) > 100 {
 		return nil, errors.New("NumPlots must be between 1 and 100")
 	}
@@ -27,15 +27,13 @@ func (r *mutationResolver) UpdateSettings(_ context.Context, settings gqlmodel.S
 	}
 
 	r.s.SetSettings(service.PlotSettings{
-		NumPlots:     int(*settings.NumPlotsPerChart),
-		NumPoints:    int(*settings.NumPoints),
-		PollInterval: int(*settings.PollInterval),
+		NumPlots:  int(*settings.NumPlotsPerChart),
+		NumPoints: int(*settings.NumPoints),
 	})
 
 	return &gqlmodel.Settings{
 		NumPlotsPerChart: *settings.NumPlotsPerChart,
 		NumPoints:        *settings.NumPoints,
-		PollInterval:     *settings.PollInterval,
 	}, nil
 }
 
@@ -69,7 +67,6 @@ func (r *queryResolver) Settings(_ context.Context) (*gqlmodel.Settings, error) 
 	return &gqlmodel.Settings{
 		NumPlotsPerChart: int32(settings.NumPlots),
 		NumPoints:        int32(settings.NumPoints),
-		PollInterval:     int32(settings.PollInterval),
 	}, nil
 }
 
