@@ -1,6 +1,7 @@
 package models
 
 import (
+	pb "github.com/patostickar/go-server-data-viz/models"
 	gqlmodel "github.com/patostickar/go-server-data-viz/src/graph/model"
 )
 
@@ -45,4 +46,26 @@ func (c Charts) ToGql() []*gqlmodel.ChartData {
 	}
 
 	return gqlCharts
+}
+
+func (c Charts) ToProto() []*pb.ChartData {
+	grpcCharts := make([]*pb.ChartData, len(c.Data))
+
+	for i, chart := range c.Data {
+		grpcPoints := make([]*pb.ChartPoint, len(chart.Data))
+
+		for j, point := range chart.Data {
+			grpcPoints[j] = &pb.ChartPoint{
+				Timestamp: point.Timestamp,
+				Values:    point.Values,
+			}
+		}
+
+		grpcCharts[i] = &pb.ChartData{
+			ChartId: chart.ChartID,
+			Points:  grpcPoints,
+		}
+	}
+
+	return grpcCharts
 }

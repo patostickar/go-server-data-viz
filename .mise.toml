@@ -1,2 +1,11 @@
 [tools]
 go = "1.23"
+protoc = "3.17.3"
+protoc-gen-go = "1.28.1"
+protoc-gen-go-grpc = "1.2.0"
+
+[plugins]
+dev-environment = "https://bitbucket.org/elevenlab/dev-environment.git"
+
+[settings]
+experimental = true

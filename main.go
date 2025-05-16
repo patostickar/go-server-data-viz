@@ -5,6 +5,7 @@ import (
 	"github.com/patostickar/go-server-data-viz/src/config"
 	"github.com/patostickar/go-server-data-viz/src/datasource"
 	"github.com/patostickar/go-server-data-viz/src/graph"
+	"github.com/patostickar/go-server-data-viz/src/grpc"
 	"github.com/patostickar/go-server-data-viz/src/rest"
 	"github.com/patostickar/go-server-data-viz/src/service"
 	"github.com/patostickar/go-server-data-viz/src/worker"
@@ -45,6 +46,11 @@ func main() {
 	// Start GraphQL server
 	g.Go(func() error {
 		return graph.New(gCtx, cfg, s).StartGqlServer()
+	})
+
+	// Start gRPC server
+	g.Go(func() error {
+		return grpc.New(gCtx, cfg, s).StartGrpcServer()
 	})
 
 	shutDownErrorChan := make(chan error, 1)
