@@ -7,8 +7,6 @@ package graph
 import (
 	"context"
 	"errors"
-	"time"
-
 	"github.com/patostickar/go-server-data-viz/src/config"
 	gqlmodel "github.com/patostickar/go-server-data-viz/src/graph/model"
 	t "github.com/patostickar/go-server-data-viz/src/graph/transformer"
@@ -40,7 +38,7 @@ func (r *mutationResolver) UpdateSettings(ctx context.Context, settings gqlmodel
 }
 
 // GetCharts is the resolver for the getCharts field.
-func (r *queryResolver) GetCharts(_ context.Context) (*gqlmodel.ChartDataTimestamp, error) {
+func (r *queryResolver) GetCharts(_ context.Context) ([]*gqlmodel.ChartData, error) {
 	charts, err := r.s.Store.Read(config.ChartsKey)
 	if err != nil {
 		return nil, err
@@ -55,15 +53,12 @@ func (r *queryResolver) GetCharts(_ context.Context) (*gqlmodel.ChartDataTimesta
 		chartData = append(chartData, gqlChart)
 	}
 	r.logger.Debugf("returning %d charts", len(chartData))
-	res := gqlmodel.ChartDataTimestamp{
-		Timestamp: time.Now().UnixMilli(),
-		ChartData: chartData,
-	}
-	return &res, nil
+
+	return chartData, nil
 }
 
 // Settings is the resolver for the settings field.
-func (r *queryResolver) Settings(_ context.Context) (*gqlmodel.Settings, error) {
+func (r *queryResolver) Settings(ctx context.Context) (*gqlmodel.Settings, error) {
 	settings := r.s.GetSettings()
 
 	return &gqlmodel.Settings{

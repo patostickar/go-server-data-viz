@@ -11,8 +11,3 @@ type ChartData struct {
 	ChartID string       `json:"chartId"`
 	Data    []ChartPoint `json:"data"`
 }
-
-type ChartDataTimestamp struct {
-	Timestamp int64       `json:"timestamp"`
-	ChartData []ChartData `json:"chartData"`
-}

@@ -5,7 +5,6 @@ import (
 	"github.com/patostickar/go-server-data-viz/src/config"
 	"github.com/patostickar/go-server-data-viz/src/models"
 	"net/http"
-	"time"
 )
 
 // NewSettingsRequest represents the configuration requested by the client
@@ -23,10 +22,7 @@ func (s *Server) dataHandler(w http.ResponseWriter, _ *http.Request) {
 		return
 	}
 
-	res := models.ChartDataTimestamp{
-		Timestamp: time.Now().UnixMilli(),
-		ChartData: data.([]models.ChartData),
-	}
+	res := data.([]models.ChartData)
 
 	w.Header().Set("Content-Type", "s/json")
 	err = json.NewEncoder(w).Encode(res)

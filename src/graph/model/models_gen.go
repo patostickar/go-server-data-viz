@@ -7,11 +7,6 @@ type ChartData struct {
 	Data    []*ChartPoint `json:"data"`
 }
 
-type ChartDataTimestamp struct {
-	Timestamp int64        `json:"timestamp"`
-	ChartData []*ChartData `json:"chartData"`
-}
-
 type ChartPoint struct {
 	Timestamp string    `json:"timestamp"`
 	Values    []float64 `json:"values"`

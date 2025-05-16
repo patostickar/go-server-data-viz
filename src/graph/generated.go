@@ -51,11 +51,6 @@ type ComplexityRoot struct {
 		Data    func(childComplexity int) int
 	}
 
-	ChartDataTimestamp struct {
-		ChartData func(childComplexity int) int
-		Timestamp func(childComplexity int) int
-	}
-
 	ChartPoint struct {
 		Timestamp func(childComplexity int) int
 		Values    func(childComplexity int) int
@@ -80,7 +75,7 @@ type MutationResolver interface {
 	UpdateSettings(ctx context.Context, settings model.SettingsInput) (*model.Settings, error)
 }
 type QueryResolver interface {
-	GetCharts(ctx context.Context) (*model.ChartDataTimestamp, error)
+	GetCharts(ctx context.Context) ([]*model.ChartData, error)
 	Settings(ctx context.Context) (*model.Settings, error)
 }
 
@@ -116,20 +111,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.ChartData.Data(childComplexity), true
-
-	case "ChartDataTimestamp.chartData":
-		if e.complexity.ChartDataTimestamp.ChartData == nil {
-			break
-		}
-
-		return e.complexity.ChartDataTimestamp.ChartData(childComplexity), true
-
-	case "ChartDataTimestamp.timestamp":
-		if e.complexity.ChartDataTimestamp.Timestamp == nil {
-			break
-		}
-
-		return e.complexity.ChartDataTimestamp.Timestamp(childComplexity), true
 
 	case "ChartPoint.timestamp":
 		if e.complexity.ChartPoint.Timestamp == nil {
@@ -303,11 +284,6 @@ type ChartData {
     data: [ChartPoint!]!
 }
 
-type ChartDataTimestamp {
-    timestamp: Int64!
-    chartData: [ChartData!]!
-}
-
 type Settings {
     NumPlotsPerChart: Int!
     NumPoints: Int!
@@ -319,7 +295,7 @@ input SettingsInput {
 }
 
 type Query {
-    getCharts: ChartDataTimestamp
+    getCharts: [ChartData!]!
     settings: Settings
 }
 
@@ -573,100 +549,6 @@ func (ec *executionContext) fieldContext_ChartData_data(_ context.Context, field
 	return fc, nil
 }
 
-func (ec *executionContext) _ChartDataTimestamp_timestamp(ctx context.Context, field graphql.CollectedField, obj *model.ChartDataTimestamp) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_ChartDataTimestamp_timestamp(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Timestamp, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(int64)
-	fc.Result = res
-	return ec.marshalNInt642int64(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_ChartDataTimestamp_timestamp(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "ChartDataTimestamp",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Int64 does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _ChartDataTimestamp_chartData(ctx context.Context, field graphql.CollectedField, obj *model.ChartDataTimestamp) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_ChartDataTimestamp_chartData(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.ChartData, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.([]*model.ChartData)
-	fc.Result = res
-	return ec.marshalNChartData2ᚕᚖgithubᚗcomᚋpatostickarᚋgoᚑserverᚑdataᚑvizᚋsrcᚋgraphᚋmodelᚐChartDataᚄ(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_ChartDataTimestamp_chartData(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "ChartDataTimestamp",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "chartId":
-				return ec.fieldContext_ChartData_chartId(ctx, field)
-			case "data":
-				return ec.fieldContext_ChartData_data(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type ChartData", field.Name)
-		},
-	}
-	return fc, nil
-}
-
 func (ec *executionContext) _ChartPoint_timestamp(ctx context.Context, field graphql.CollectedField, obj *model.ChartPoint) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_ChartPoint_timestamp(ctx, field)
 	if err != nil {
@@ -834,11 +716,14 @@ func (ec *executionContext) _Query_getCharts(ctx context.Context, field graphql.
 		return graphql.Null
 	}
 	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
-	res := resTmp.(*model.ChartDataTimestamp)
+	res := resTmp.([]*model.ChartData)
 	fc.Result = res
-	return ec.marshalOChartDataTimestamp2ᚖgithubᚗcomᚋpatostickarᚋgoᚑserverᚑdataᚑvizᚋsrcᚋgraphᚋmodelᚐChartDataTimestamp(ctx, field.Selections, res)
+	return ec.marshalNChartData2ᚕᚖgithubᚗcomᚋpatostickarᚋgoᚑserverᚑdataᚑvizᚋsrcᚋgraphᚋmodelᚐChartDataᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Query_getCharts(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -849,12 +734,12 @@ func (ec *executionContext) fieldContext_Query_getCharts(_ context.Context, fiel
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
-			case "timestamp":
-				return ec.fieldContext_ChartDataTimestamp_timestamp(ctx, field)
-			case "chartData":
-				return ec.fieldContext_ChartDataTimestamp_chartData(ctx, field)
+			case "chartId":
+				return ec.fieldContext_ChartData_chartId(ctx, field)
+			case "data":
+				return ec.fieldContext_ChartData_data(ctx, field)
 			}
-			return nil, fmt.Errorf("no field named %q was found under type ChartDataTimestamp", field.Name)
+			return nil, fmt.Errorf("no field named %q was found under type ChartData", field.Name)
 		},
 	}
 	return fc, nil
@@ -3163,50 +3048,6 @@ func (ec *executionContext) _ChartData(ctx context.Context, sel ast.SelectionSet
 	return out
 }
 
-var chartDataTimestampImplementors = []string{"ChartDataTimestamp"}
-
-func (ec *executionContext) _ChartDataTimestamp(ctx context.Context, sel ast.SelectionSet, obj *model.ChartDataTimestamp) graphql.Marshaler {
-	fields := graphql.CollectFields(ec.OperationContext, sel, chartDataTimestampImplementors)
-
-	out := graphql.NewFieldSet(fields)
-	deferred := make(map[string]*graphql.FieldSet)
-	for i, field := range fields {
-		switch field.Name {
-		case "__typename":
-			out.Values[i] = graphql.MarshalString("ChartDataTimestamp")
-		case "timestamp":
-			out.Values[i] = ec._ChartDataTimestamp_timestamp(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
-		case "chartData":
-			out.Values[i] = ec._ChartDataTimestamp_chartData(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
-		default:
-			panic("unknown field " + strconv.Quote(field.Name))
-		}
-	}
-	out.Dispatch(ctx)
-	if out.Invalids > 0 {
-		return graphql.Null
-	}
-
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
-
-	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
-			Label:    label,
-			Path:     graphql.GetPath(ctx),
-			FieldSet: dfs,
-			Context:  ctx,
-		})
-	}
-
-	return out
-}
-
 var chartPointImplementors = []string{"ChartPoint"}
 
 func (ec *executionContext) _ChartPoint(ctx context.Context, sel ast.SelectionSet, obj *model.ChartPoint) graphql.Marshaler {
@@ -3319,13 +3160,16 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 		case "getCharts":
 			field := field
 
-			innerFunc := func(ctx context.Context, _ *graphql.FieldSet) (res graphql.Marshaler) {
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
 				defer func() {
 					if r := recover(); r != nil {
 						ec.Error(ctx, ec.Recover(ctx, r))
 					}
 				}()
 				res = ec._Query_getCharts(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
 				return res
 			}
 
@@ -3947,21 +3791,6 @@ func (ec *executionContext) marshalNInt2int32(ctx context.Context, sel ast.Selec
 	return res
 }
 
-func (ec *executionContext) unmarshalNInt642int64(ctx context.Context, v any) (int64, error) {
-	res, err := graphql.UnmarshalInt64(v)
-	return res, graphql.ErrorOnPath(ctx, err)
-}
-
-func (ec *executionContext) marshalNInt642int64(ctx context.Context, sel ast.SelectionSet, v int64) graphql.Marshaler {
-	res := graphql.MarshalInt64(v)
-	if res == graphql.Null {
-		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
-		}
-	}
-	return res
-}
-
 func (ec *executionContext) unmarshalNSettingsInput2githubᚗcomᚋpatostickarᚋgoᚑserverᚑdataᚑvizᚋsrcᚋgraphᚋmodelᚐSettingsInput(ctx context.Context, v any) (model.SettingsInput, error) {
 	res, err := ec.unmarshalInputSettingsInput(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
@@ -4257,13 +4086,6 @@ func (ec *executionContext) marshalOBoolean2ᚖbool(ctx context.Context, sel ast
 	}
 	res := graphql.MarshalBoolean(*v)
 	return res
-}
-
-func (ec *executionContext) marshalOChartDataTimestamp2ᚖgithubᚗcomᚋpatostickarᚋgoᚑserverᚑdataᚑvizᚋsrcᚋgraphᚋmodelᚐChartDataTimestamp(ctx context.Context, sel ast.SelectionSet, v *model.ChartDataTimestamp) graphql.Marshaler {
-	if v == nil {
-		return graphql.Null
-	}
-	return ec._ChartDataTimestamp(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalOInt2ᚖint32(ctx context.Context, v any) (*int32, error) {
