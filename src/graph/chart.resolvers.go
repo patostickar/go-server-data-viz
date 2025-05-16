@@ -9,7 +9,6 @@ import (
 	"errors"
 	"github.com/patostickar/go-server-data-viz/src/config"
 	gqlmodel "github.com/patostickar/go-server-data-viz/src/graph/model"
-	t "github.com/patostickar/go-server-data-viz/src/graph/transformer"
 	"github.com/patostickar/go-server-data-viz/src/models"
 	"github.com/patostickar/go-server-data-viz/src/service"
 )
@@ -44,17 +43,7 @@ func (r *queryResolver) GetCharts(_ context.Context) ([]*gqlmodel.ChartData, err
 		return nil, err
 	}
 
-	var chartData []*gqlmodel.ChartData
-	for _, chart := range charts.([]models.ChartData) {
-		gqlChart := &gqlmodel.ChartData{
-			ChartID: chart.ChartID,
-			Data:    t.ChartPoints2Gql(chart.Data),
-		}
-		chartData = append(chartData, gqlChart)
-	}
-	r.logger.Debugf("returning %d charts", len(chartData))
-
-	return chartData, nil
+	return charts.(models.Charts).ToGql(), nil
 }
 
 // Settings is the resolver for the settings field.

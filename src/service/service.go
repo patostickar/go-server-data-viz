@@ -85,7 +85,7 @@ func (s *Service) GenerateChartsData(numPlots, numPoints int, timestamp int64) {
 			Data:    points,
 		}
 	}
-	s.Store.Upsert(config.ChartsKey, charts)
+	s.Store.Upsert(config.ChartsKey, models.Charts{Data: charts})
 }
 
 func (s *Service) sineWave(x, frequency, phase float64) float64 {
