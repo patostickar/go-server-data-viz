@@ -1,13 +1,26 @@
 version: '3.8'
 
 services:
-  app:
+  go-server:
     build: .
     ports:
       - "8080:8080"
       - "8081:8081"
+      - "8082:8082"
     environment:
       - GO_ENV=production
+    restart: unless-stopped
+    networks:
+      - app-network
+
+  envoy:
+    image: envoyproxy/envoy:v1.29-latest
+    ports:
+      - "9090:9090"  # gRPC-Web port
+    volumes:
+      - ./envoy.yaml:/etc/envoy/envoy.yaml
+    depends_on:
+      - go-server
     restart: unless-stopped
     networks:
       - app-network
