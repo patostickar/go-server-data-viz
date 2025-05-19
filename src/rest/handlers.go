@@ -22,13 +22,13 @@ func (s *Server) dataHandler(w http.ResponseWriter, _ *http.Request) {
 		return
 	}
 
-	res := data.([]models.ChartData)
+	res := data.(models.Charts)
 
 	w.Header().Set("Content-Type", "s/json")
-	err = json.NewEncoder(w).Encode(res)
+	err = json.NewEncoder(w).Encode(res.Data)
 	if err != nil {
 		s.log.Error(err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
-	s.log.Debugf("returning %d charts", len(data.([]models.ChartData)))
+	s.log.Debugf("returning %d charts", len(res.Data))
 }
