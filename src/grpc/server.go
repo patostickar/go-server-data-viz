@@ -32,7 +32,7 @@ func New(ctx context.Context, cfg config.Config, s *service.Service) *Server {
 }
 
 func (s *Server) StartGrpcServer() error {
-	lis, err := net.Listen("tcp", fmt.Sprintf("localhost:%s", s.cfg.GetGrpcPort()))
+	lis, err := net.Listen("tcp", fmt.Sprintf("0.0.0.0:%s", s.cfg.GetGrpcPort()))
 	if err != nil {
 		log.Fatalf("failed to listen: %v", err)
 	}

@@ -33,7 +33,7 @@ func (s *chartServiceServer) GetChartData(context.Context, *emptypb.Empty) (*pb.
 		return nil, err
 	}
 
-	s.log.Debugf("returning %d charts", len(data.([]models.ChartData)))
+	s.log.Debugf("returning %d charts", len(data.(models.Charts).Data))
 	return &pb.ChartDataList{
 		Items: data.(models.Charts).ToProto(),
 	}, nil

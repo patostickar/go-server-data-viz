@@ -2,7 +2,7 @@ module github.com/patostickar/go-server-data-viz
 
 go 1.23.0
 
-toolchain go1.23.7
+toolchain go1.23.10
 
 require (
 	github.com/99designs/gqlgen v0.17.70

@@ -9,3 +9,8 @@ dev-environment = "https://bitbucket.org/elevenlab/dev-environment.git"
 
 [settings]
 experimental = true
+
+[env]
+REST_PORT = 8080
+GRAPHQL_PORT = 8081
+GRPC_PORT = 8082

@@ -56,7 +56,7 @@ static_resources:
             http2_protocol_options: {}
       lb_policy: round_robin
       load_assignment:
-        cluster_name: cluster_0
+        cluster_name: grpc_service
         endpoints:
           - lb_endpoints:
               - endpoint:
