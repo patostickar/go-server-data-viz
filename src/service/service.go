@@ -8,7 +8,6 @@ import (
 	log "github.com/sirupsen/logrus"
 	"math"
 	"sync"
-	"time"
 )
 
 type PlotSettings struct {
@@ -75,7 +74,7 @@ func (s *Service) GenerateChartsData(numPlots, numPoints int, timestamp int64) {
 			}
 
 			points[i] = models.ChartPoint{
-				Timestamp: time.Unix(currentTimestamp, 0).Format("15:04:05"),
+				Timestamp: currentTimestamp,
 				Values:    values,
 			}
 		}

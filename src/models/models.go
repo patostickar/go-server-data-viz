@@ -3,11 +3,12 @@ package models
 import (
 	pb "github.com/patostickar/go-server-data-viz/models"
 	gqlmodel "github.com/patostickar/go-server-data-viz/src/graph/model"
+	"time"
 )
 
 // ChartPoint represents the values for a single timestamp on a Plot
 type ChartPoint struct {
-	Timestamp string    `json:"timestamp"`
+	Timestamp int64     `json:"timestamp"`
 	Values    []float64 `json:"values"`
 }
 
@@ -26,7 +27,7 @@ func (d ChartData) toGql() []*gqlmodel.ChartPoint {
 
 	for _, point := range d.Data {
 		gqlPoint := &gqlmodel.ChartPoint{
-			Timestamp: point.Timestamp,
+			Timestamp: time.Unix(point.Timestamp, 0).Format("15:04:05"),
 			Values:    point.Values,
 		}
 		gqlPoints = append(gqlPoints, gqlPoint)
@@ -56,8 +57,8 @@ func (c Charts) ToProto() []*pb.ChartData {
 
 		for j, point := range chart.Data {
 			grpcPoints[j] = &pb.ChartPoint{
-				Timestamp: point.Timestamp,
-				Values:    point.Values,
+				TimestampUnixSeconds: point.Timestamp,
+				Values:               point.Values,
 			}
 		}
 
